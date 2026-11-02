@@ -1,0 +1,116 @@
+---
+title: "Attribute links"
+sidebarTitle: "Links"
+description: "The five module links between the Product Attribute module and Medusa's Product module."
+---
+
+The Product Attribute module never references Medusa’s Product module directly. Five module links in `packages/core/src/links` connect them: two that store data in pivot tables and three read-only links resolved from a foreign key on one side. Resolve `query` from the container to read across them.
+
+```ts
+import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+
+const query = container.resolve(ContainerRegistrationKeys.QUERY)
+```
+
+## Product to attribute value
+
+The values a product holds, for every attribute type. This is the link the attachment workflows write.
+
+| Property | Value |
+| --- | --- |
+| Sides | `Product` ↔ `ProductAttributeValue` |
+| Cardinality | Many-to-many |
+| Storage | Pivot table `product_attribute_value_link` |
+| Aliases | `product_attribute_values` on product, `products` on value |
+| Defined in | `product-attribute-value-pivot-link.ts` |
+
+```ts
+const { data: [product] } = await query.graph({
+  entity: "product",
+  fields: [
+    "product_attribute_values.name",
+    "product_attribute_values.attribute.name",
+  ],
+  filters: { id: "prod_01JD8Q1234567" },
+})
+```
+
+The query returns each linked value with its parent attribute, which is how you read a product’s full attribute selection.
+
+## Product to scoped attributes
+
+The inline attributes created on a product. The link is read-only and resolves `ProductAttribute.product_id` against `product.id`.
+
+| Property | Value |
+| --- | --- |
+| Sides | `Product` → `ProductAttribute` |
+| Cardinality | One-to-many |
+| Storage | None, read-only |
+| Alias | `scoped_attributes` on product |
+| Defined in | `product-attribute-product-link.ts` |
+
+```ts
+const { data: [product] } = await query.graph({
+  entity: "product",
+  fields: ["scoped_attributes.name", "scoped_attributes.values.name"],
+  filters: { id: "prod_01JD8Q1234567" },
+})
+```
+
+## Attribute to category
+
+The product categories a global attribute is offered for. An attribute with no category links is offered for every product.
+
+| Property | Value |
+| --- | --- |
+| Sides | `ProductAttribute` ↔ `ProductCategory` |
+| Cardinality | Many-to-many |
+| Storage | Pivot table `product_category_attribute` |
+| Aliases | `categories` on attribute, `product_attributes` on category |
+| Defined in | `product-attribute-category-link.ts` |
+
+```ts
+const { data: attributes } = await query.graph({
+  entity: "product_attribute",
+  fields: ["id", "name", "categories.id", "categories.name"],
+  filters: { product_id: null },
+})
+```
+
+`createProductAttributesWorkflow` writes these links from `category_ids`. Write more yourself with the link service, using the keys `product_attribute_id` and `product_category_id`.
+
+## Attribute to product option
+
+The Medusa `ProductOption` that backs a variant axis. The link is read-only and keyed on `ProductAttribute.product_option_id`.
+
+| Property | Value |
+| --- | --- |
+| Sides | `ProductAttribute` → `ProductOption` |
+| Cardinality | One-to-one |
+| Storage | None, read-only |
+| Defined in | `product-attribute-option-mirror-link.ts` |
+
+## Attribute value to option value
+
+The Medusa `ProductOptionValue` that backs one value of a variant axis. The link is read-only and keyed on `ProductAttributeValue.product_option_value_id`.
+
+| Property | Value |
+| --- | --- |
+| Sides | `ProductAttributeValue` → `ProductOptionValue` |
+| Cardinality | One-to-one |
+| Storage | None, read-only |
+| Defined in | `product-attribute-value-option-value-mirror-link.ts` |
+
+Core code reads the mirror through the foreign keys, not through these links. Do the same: read the ids from the attribute, then query the option.
+
+```ts
+const { data: [option] } = await query.graph({
+  entity: "product_option",
+  fields: ["id", "title", "is_exclusive", "values.id", "values.value"],
+  filters: { id: attribute.product_option_id },
+})
+```
+
+<Note>
+  The workflows keep the mirror in step. Never write `product_option_id` or `product_option_value_id` yourself, or the attribute and its option will drift apart.
+</Note>

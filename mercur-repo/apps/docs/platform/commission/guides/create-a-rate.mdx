@@ -1,0 +1,120 @@
+---
+title: "Create a commission rate"
+sidebarTitle: "Create a rate"
+description: "Create percentage and fixed commission rates from a seed script or API route with createCommissionRatesWorkflow."
+---
+
+Create commission rates from your own server code, for example to seed a new marketplace or to set a seller’s rate during onboarding.
+
+## Before you begin
+
+You need the following:
+
+- A Mercur project with `@mercurjs/core` registered through `withMercur()`
+- The id of any seller, product, or category you want to scope a rate to
+
+<Steps>
+  <Step title="Create a percentage rate">
+    Run `createCommissionRatesWorkflow` with an array of rates. This seed script creates a 12% rate for apparel.
+
+    ```ts title="src/scripts/seed-commission.ts"
+    import type { ExecArgs } from "@medusajs/framework/types"
+    import { CommissionRateType } from "@mercurjs/types"
+    import { createCommissionRatesWorkflow } from "@mercurjs/core/workflows"
+
+    export default async function seedCommission({ container }: ExecArgs) {
+      const { result } = await createCommissionRatesWorkflow(container).run({
+        input: [
+          {
+            name: "Apparel",
+            code: "apparel",
+            type: CommissionRateType.PERCENTAGE,
+            value: 12,
+          },
+        ],
+      })
+
+      console.log(result.map((rate) => rate.id))
+    }
+    ```
+
+    The workflow returns the created rates in input order. If you leave out `code`, the module generates one from `name` with a random suffix, so set it when other code needs to find the rate by code.
+
+  </Step>
+  <Step title="Run the script">
+    Run the script with the Medusa CLI from your API app.
+
+    ```bash
+    npx medusa exec ./src/scripts/seed-commission.ts
+    ```
+
+    A rate without rules matches every line, so it competes with the global rate until you scope it.
+
+  </Step>
+  <Step title="Scope the rate">
+    Attach rules with `batchCommissionRulesWorkflow`, passing the id of the rate you created.
+
+    ```ts title="src/scripts/seed-commission.ts"
+    import { batchCommissionRulesWorkflow } from "@mercurjs/core/workflows"
+
+    await batchCommissionRulesWorkflow(container).run({
+      input: {
+        commission_rate_id: result[0].id,
+        create: [
+          { reference: "product_type", reference_id: "ptyp_01JD8Q1234567" },
+        ],
+      },
+    })
+    ```
+
+    The rate now matches only lines whose product has that type. See [Batch-update commission rules](/platform/commission/guides/batch-update-rules) for updates and deletes.
+
+  </Step>
+</Steps>
+
+## Create a fixed rate with per-currency amounts
+
+A fixed rate takes an amount per currency in `values`, and `value` is the fallback. `CreateCommissionRateDTO` doesn’t declare `values` or `rules`, but the module creates both as nested records.
+
+```ts title="src/scripts/seed-commission.ts"
+const flatFee = {
+  name: "Flat fee",
+  type: CommissionRateType.FIXED,
+  value: 3,
+  values: [
+    { currency_code: "usd", amount: 2.5 },
+    { currency_code: "eur", amount: 2 },
+  ],
+  rules: [{ reference: "seller", reference_id: "sel_01JD8Q1234567" }],
+}
+
+await createCommissionRatesWorkflow(container).run({ input: [flatFee] })
+```
+
+Declaring the rate as a variable keeps TypeScript from rejecting the extra `values` and `rules` keys. The result is a flat fee per line item for one seller: 2.5 in USD, 2 in EUR, and 3 in any other currency.
+
+## Change the global commission
+
+The global rate is the one with `is_default: true`. Look it up, then update it with `updateCommissionRatesWorkflow`.
+
+```ts title="src/scripts/seed-commission.ts"
+import { MercurModules } from "@mercurjs/types"
+import { updateCommissionRatesWorkflow } from "@mercurjs/core/workflows"
+
+const commission = container.resolve(MercurModules.COMMISSION)
+const [globalRate] = await commission.listCommissionRates({
+  is_default: true,
+})
+
+await updateCommissionRatesWorkflow(container).run({
+  input: [{ id: globalRate.id, value: 10, include_shipping: true }],
+})
+```
+
+This raises the baseline to 10% and turns on shipping commission. Only the global rate’s `include_shipping` produces shipping lines.
+
+## Next steps
+
+- [Scope rates with batchCommissionRulesWorkflow](/platform/commission/guides/batch-update-rules)
+- [Recompute existing orders after changing rates](/platform/commission/guides/refresh-order-commission-lines)
+- [See how the winning rate is picked](/platform/commission/concepts/rule-matching)

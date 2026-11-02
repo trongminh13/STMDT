@@ -1,0 +1,114 @@
+---
+title: "Send a proposed product back for a revision"
+sidebarTitle: "Request a revision"
+description: "Ask a seller to rework a proposed product, record the request, and notify the seller."
+---
+
+Ask a seller to rework a product they’ve proposed, instead of publishing or rejecting it. The request leaves the product `proposed`, adds a `CHANGE_REQUESTED` entry to its history, and emits an event you can use to notify the seller.
+
+## Before you begin
+
+You need the following in place:
+
+- A Mercur server with `@mercurjs/core` installed through `withMercur()`
+- A product with status `proposed`. The workflow fails for any other status
+
+## Request and notify
+
+Run the workflow from an admin route, then notify the seller from a subscriber.
+
+<Steps>
+  <Step title="Run the workflow">
+    `requestProductChangeWorkflow` checks the product status, records the audit change, and emits `product.change-requested`.
+
+    ```ts title="src/api/admin/custom/products/[id]/revise/route.ts"
+    import type {
+      AuthenticatedMedusaRequest,
+      MedusaResponse,
+    } from "@medusajs/framework/http"
+    import { requestProductChangeWorkflow } from "@mercurjs/core/workflows"
+
+    export async function POST(
+      req: AuthenticatedMedusaRequest<{ message: string }>,
+      res: MedusaResponse
+    ) {
+      await requestProductChangeWorkflow(req.scope).run({
+        input: {
+          product_id: req.params.id,
+          actor_id: req.auth_context.actor_id,
+          message: req.body.message,
+        },
+      })
+
+      res.json({ id: req.params.id })
+    }
+    ```
+
+    The message is optional. Without it, the action’s `details.message` is `null`.
+  </Step>
+  <Step title="Notify the seller">
+    Subscribe to `product.change-requested`. The payload carries the product id, not a change id, plus the message and the operator’s id.
+
+    ```ts title="src/subscribers/product-change-requested.ts"
+    import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
+
+    type Payload = { id: string; message?: string; actor_id?: string }
+
+    export default async function handler({
+      event,
+      container,
+    }: SubscriberArgs<Payload>) {
+      const logger = container.resolve("logger")
+
+      logger.info(
+        `Revision requested on ${event.data.id}: ${event.data.message ?? ""}`
+      )
+    }
+
+    export const config: SubscriberConfig = {
+      event: "product.change-requested",
+    }
+    ```
+
+    Replace the log line with your notification, for example a call to Medusa’s Notification module.
+  </Step>
+</Steps>
+
+## Where the request is stored
+
+`requestProductChangeWorkflow` calls `recordProductAuditChangeWorkflow`, which stores the request as a change that starts out `confirmed`. The message is saved in two places:
+
+- **`details.message`**: on the `CHANGE_REQUESTED` action
+- **`external_note`**: on the change, where the seller-facing note lives
+
+Read every revision request on a product by querying its actions:
+
+```ts
+const { data: requests } = await query.graph({
+  entity: "product_change_action",
+  fields: ["details", "product_change.created_by", "created_at"],
+  filters: {
+    product_id: "prod_01JD8Q1234567",
+    action: "CHANGE_REQUESTED",
+  },
+})
+```
+
+`product_change.created_by` is the operator who asked.
+
+## Publish or reject instead
+
+When the product is ready or can’t be fixed, resolve it with a product workflow instead. Both require the product to be `proposed`, and both record a confirmed `STATUS_CHANGE` audit change:
+
+- **`confirmProductsWorkflow`**: takes `product_ids`, sets them to `published`, and emits `product.published`
+- **`rejectProductWorkflow`**: takes `product_id` and an optional `message`, sets it to `rejected`, and emits `product.rejected`
+
+## Attach custom data with additional_data
+
+`requestProductChangeWorkflow` passes `additional_data` to its `productChangeRequested` hook, along with `product_id` and `message`. Use it to store, for example, the checklist items the seller has to fix.
+
+## Next steps
+
+- [How audit changes fit the trail](/platform/product-edit/concepts/change-pipeline#audit-changes)
+- [Revision requests and statuses](/platform/product-edit/concepts/status-and-auto-confirm#revision-requests)
+- [Event payloads](/platform/product-edit/reference/events)

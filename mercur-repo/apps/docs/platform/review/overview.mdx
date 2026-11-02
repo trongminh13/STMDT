@@ -1,0 +1,97 @@
+---
+title: "Reviews"
+sidebarTitle: "Overview"
+description: "Let customers rate the products and stores they bought from, then moderate, answer, and average those ratings."
+---
+
+Use Mercur to let customers rate the products they bought and the stores that sold them.
+
+A review is one customer’s rating of one target: a master product or a store. Each review is tied to the order that earned it, starts as `pending`, and waits for an operator to publish or reject it. The Review module ships inside `@mercurjs/core`, so it’s registered with the rest of the marketplace modules and needs no extra install. It connects to products, stores, orders, and customers through module links.
+
+<img className="block dark:hidden" src="/images/figures/review-overview-light.svg" alt="Behind, createReviewWorkflow, which writes every review. In front, the review table: order #1001 backs a published seller review of ACME and a pending product review of the linen shirt, beside a rejected review from order #998." />
+<img className="hidden dark:block" src="/images/figures/review-overview-dark.svg" alt="Behind, createReviewWorkflow, which writes every review. In front, the review table: order #1001 backs a published seller review of ACME and a pending product review of the linen shirt, beside a rejected review from order #998." />
+
+<Note>
+  The panels call the target a store. The code calls the same record a `Seller`, so a store review has `reference: "seller"`. Reviews use the id prefix `rev` and resolve with `MercurModules.REVIEW`.
+</Note>
+
+## Key features
+
+The Review module covers a review from submission to the number on a storefront:
+
+- **One model, two targets**: a single `Review` record rates a product or a store, chosen by its `reference` field
+- **Order-backed**: the order must belong to the customer, and each order can review a given target once
+- **Moderation**: reviews start `pending`, and an operator sets them to `published` or `rejected`
+- **Store responses**: a store answers a review once through `seller_note`
+- **Rating helpers**: service methods compute average ratings per product or per store at query time
+- **Compensation**: every review workflow rolls its write back if a later step fails
+
+## How it works
+
+A review moves through four stages:
+
+1. A customer calls `POST /store/reviews` with an order they own, which runs `createReviewWorkflow`
+2. The workflow validates the order, creates the review as `pending`, and links it to its customer, order, and target
+3. An operator publishes or rejects it with `updateReviewWorkflow`, and the store answers it with `respondReviewWorkflow`
+4. Your own storefront route reads published reviews and averages them with the service’s rating helpers
+
+<Warning>
+  Core ships no public endpoint that lists a product’s or a store’s published reviews, and no route returns an average rating. `GET /store/reviews` returns only the signed-in customer’s own reviews. Add a route for storefront display, as shown in [Compute aggregate ratings](/platform/review/guides/compute-aggregate-ratings).
+</Warning>
+
+## Get started
+
+Learn how reviews, their targets, and their statuses fit together.
+
+<CardGroup cols={2}>
+  <Card title="The review model" icon="star" href="/platform/review/concepts/the-review-model">
+    The fields of a review: rating, notes, status, and display id.
+  </Card>
+  <Card title="Product vs seller reviews" icon="tags" href="/platform/review/concepts/product-vs-seller-reviews">
+    How `reference` picks the target and which links anchor each review.
+  </Card>
+  <Card title="Ratings & moderation" icon="gauge" href="/platform/review/concepts/ratings-and-moderation">
+    Status changes, store responses, and how averages are computed.
+  </Card>
+</CardGroup>
+
+## Examples
+
+Build against reviews in your own server code.
+
+<CardGroup cols={2}>
+  <Card title="Create a review" icon="plus" href="/platform/review/guides/create-a-review">
+    Run `createReviewWorkflow` from a custom route.
+  </Card>
+  <Card title="Moderate a review" icon="gavel" href="/platform/review/guides/moderate-a-review">
+    Publish, reject, and delete reviews in code.
+  </Card>
+  <Card title="Respond to a review" icon="reply" href="/platform/review/guides/respond-to-a-review">
+    Attach a store’s answer with `respondReviewWorkflow`.
+  </Card>
+  <Card title="Aggregate ratings" icon="calculator" href="/platform/review/guides/compute-aggregate-ratings">
+    Serve average ratings for products and stores.
+  </Card>
+</CardGroup>
+
+## Resources
+
+The data model, links, workflows, service methods, and events behind reviews.
+
+<CardGroup cols={2}>
+  <Card title="Data models" icon="table" href="/platform/review/reference/data-models">
+    The `Review` model, its fields, and its indexes.
+  </Card>
+  <Card title="Links" icon="link" href="/platform/review/reference/links">
+    The four links to products, sellers, orders, and customers.
+  </Card>
+  <Card title="Workflows" icon="diagram-project" href="/platform/review/reference/workflows">
+    Create, update, respond, and delete workflows with their steps.
+  </Card>
+  <Card title="Service" icon="gear" href="/platform/review/reference/service">
+    Generated methods and the rating helpers.
+  </Card>
+  <Card title="Events" icon="bell" href="/platform/review/reference/events">
+    The mutation events the module emits.
+  </Card>
+</CardGroup>

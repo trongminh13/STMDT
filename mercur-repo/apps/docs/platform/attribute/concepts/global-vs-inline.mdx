@@ -1,0 +1,72 @@
+---
+title: "Global and inline attributes"
+sidebarTitle: "Global vs inline"
+description: "Catalog-wide attributes, attributes scoped to one product, category scoping, and storefront filters."
+---
+
+Every attribute is either global, a catalog entry any product can reuse, or inline, a one-off field created on a single product. Global attributes keep the catalog consistent across stores. Inline attributes cover the odd field one product needs without adding noise to the shared vocabulary.
+
+## Scope is decided by product_id
+
+The `product_id` field on `ProductAttribute` decides the scope. It’s `null` for a global attribute and holds the product’s id for an inline one:
+
+| Scope | `product_id` | Created by | Listed in the catalog |
+| --- | --- | --- | --- |
+| Global | `null` | `createProductAttributesWorkflow` | Yes |
+| Inline | `prod_…` | An inline entry in a product’s `add` list | No |
+
+The admin, vendor, and store attribute list routes all filter on `product_id: null`, so inline attributes never appear in the catalog. You read them from the product through the `scoped_attributes` link instead.
+
+```ts
+const { data: [product] } = await query.graph({
+  entity: "product",
+  fields: ["id", "scoped_attributes.name", "scoped_attributes.values.name"],
+  filters: { id: "prod_01JD8Q1234567" },
+})
+```
+
+## Create an inline attribute
+
+You create an inline attribute while you attach it. An `add` entry with a `title` instead of an `id` creates a product-scoped attribute, its values, and the links in one step:
+
+```ts
+await createAndLinkProductAttributesToProductWorkflow(container).run({
+  input: {
+    product_id: "prod_01JD8Q1234567",
+    add: [{ title: "Gift wrap", value: true }],
+  },
+})
+```
+
+When you omit `type`, the workflow infers it: `is_variant_axis: true` makes a `multi_select` axis, a boolean `value` makes a `toggle`, and anything else makes a `text` attribute. Inline attributes get no derived handle, so their names never clash with the catalog.
+
+The two scopes behave differently over their life:
+
+- **Rename**: an `update` entry with a `title` renames an inline attribute and, for an axis, its exclusive option, but it’s ignored for a global attribute
+- **Remove**: removing an inline attribute from its product deletes the attribute and its values, while removing a global one drops the product’s value links and, for an axis, detaches the option
+- **Delete**: `deleteProductAttributesWorkflow` refuses to delete a global attribute while any of its values are linked to a product
+
+## Scope global attributes to categories
+
+A global attribute can link to product categories through the `categories` link. The admin and vendor attribute lists accept a `product_category_id` filter and return two groups: attributes linked to that category, and attributes linked to no category at all. Category links change where an attribute is offered:
+
+- **No categories**: the attribute is offered for every product
+- **One or more categories**: the attribute is offered only for products in those categories
+
+Pass `category_ids` to `createProductAttributesWorkflow` to create the links with the attribute.
+
+## Storefront filters
+
+Shoppers filter `GET /store/products` with `attributes[<handle>]=value` query parameters. The store middleware turns each one into a filter on `variants.options.value`, so filtering works on variant axis values. Several values for one attribute are OR’d, and separate attributes are AND’d.
+
+`is_filterable` doesn’t change that query. It’s a flag your storefront reads from the store attribute list to decide which attributes to render as facets.
+
+<Tip>
+  Mark axes such as Size and Color as filterable. Descriptive `text` attributes such as care instructions aren’t variant options, so the product filter can’t match them.
+</Tip>
+
+## Related
+
+- [Attach attributes to a product](/platform/attribute/guides/attach-attributes-to-a-product)
+- [Variant axes and Medusa product options](/platform/attribute/concepts/variant-axes)
+- [The scoped_attributes and categories links](/platform/attribute/reference/links)

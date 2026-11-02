@@ -1,0 +1,149 @@
+---
+title: "Payout"
+description: "How seller payouts work in Mercur — accounts, onboarding, one payout per order, and reversals of refunds."
+---
+
+The payout module handles the financial side of a marketplace — onboarding sellers to a payout provider, paying each seller their share of an order after fulfillment, and taking refunded shares back.
+
+## Payout account
+
+Every seller that wants to receive funds needs a **PayoutAccount**. This account links a seller to an external payment provider (e.g. Stripe Connect).
+
+### Account lifecycle
+
+```
+PENDING → ACTIVE
+           ↓
+        RESTRICTED → ACTIVE (or REJECTED)
+```
+
+| Status | Description |
+|--------|-------------|
+| `PENDING` | Account created, awaiting provider onboarding |
+| `ACTIVE` | Fully onboarded, can receive payouts |
+| `RESTRICTED` | Provider has flagged the account (e.g. missing KYC) |
+| `REJECTED` | Provider rejected the account |
+
+### Onboarding
+
+When a payout account is created, an **Onboarding** record is attached to it. This stores provider-specific data needed for identity verification or account setup (e.g. Stripe Connect onboarding links).
+
+## Payouts and reversals
+
+A **Payout** is the seller's share of one order: the order total minus the order's commission lines, sent to the seller's payout account. Each order gets at most one payout. A later refund gets a **PayoutReversal** under that payout, for the refund minus its share of the commission, the way Medusa keeps a `Refund` under a `Payment`.
+
+`createOrderPayoutsWorkflow` decides each order's payout. It pays the order when:
+
+- The seller has a payout account with payouts enabled
+- The order isn't canceled and has reached the required fulfillment status (default `fulfilled`)
+- The order's payment is captured, and not canceled or fully refunded
+- Total minus commission is positive
+
+Otherwise the payout is `on_hold` with a reason, and the next run re-decides it; a canceled order or payment `aborts` it. `createPayoutReversalsWorkflow` does the same for refunds, once the payout is paid.
+
+### Payout statuses
+
+| Status | Description |
+|--------|-------------|
+| `PENDING` | Every check passed, about to be sent |
+| `ON_HOLD` | Waiting for the account, fulfillment, or capture |
+| `PROCESSING` | Provider is processing the payout |
+| `PAID` | Funds reached the seller's account |
+| `FAILED` | The provider refused it; retried on the next run |
+| `ABORTED` | Canceled order or payment, or a final provider error |
+
+## The payout pipeline
+
+`@mercurjs/core` ships the workflows, not a schedule. Something has to call `createOrderPayoutsWorkflow` and `createPayoutReversalsWorkflow`:
+
+- **With the Stripe connector plugin**, its jobs do it: they capture the cart payment once every seller order is decided, pay out fulfilled and captured orders every five minutes, reverse refunds, net a nightly settlement per seller, and send it to the seller's bank. Subscribers on fulfillment, cancellation, capture, and refunds run the passes right away. See [Stripe Connect](/resources/integrations/stripe-connect/overview).
+- **With another provider**, call the workflows from your own job or subscriber. They're safe to run repeatedly: an order already paid is never paid again.
+
+### Webhook handling
+
+The provider posts to `/hooks/payout`. A subscriber listens for `payout.webhook_received`, the provider parses the payload into an action, and `processPayoutForWebhookWorkflow` applies it:
+
+- `account.*` → the account is re-read from the provider, and its status, flags, and KYC status are stored
+- `payout.paid` → the payout is set to `PAID` and keeps the provider's payout id for later reversals
+- `payout.failed` → the payout is set to `FAILED` with `status_reason: "provider_error"`
+
+## Configuration
+
+The payout module accepts these options in `medusa-config.ts`, plus exactly one entry in `providers`:
+
+| Option | Default | Description |
+|--------|---------|-------------|
+| `onboarding.returnUrl` | - | Where the provider sends the seller after onboarding |
+| `onboarding.refreshBaseUrl` | - | API origin of the public refresh URL for expired onboarding links |
+| `onboarding.prefill` | `false` | Prefill the provider's forms from the seller's profile |
+| `onboarding.defaultCountry` | - | Country used when the seller has no address |
+| `onboarding.tokenTtlSeconds` | `86400` | How long the token in an onboarding refresh URL stays valid. Each refresh rotates it |
+
+Scheduling options, such as the capture window and the required fulfillment status, belong to the integration that runs the payouts.
+
+## Data model overview
+
+```
+PayoutAccount
+├── Onboarding (one-to-one)
+└── Payout (one-to-many, one per order)
+    └── PayoutReversal (one-to-many, one per refund)
+```
+
+## Configuration example
+
+```typescript
+// medusa-config.ts
+{
+  resolve: "@mercurjs/core/modules/payout",
+  options: {
+    providers: [
+      {
+        resolve: "@mercurjs/stripe-connector-plugin/providers/payout-stripe-connect",
+        id: "stripe",
+        options: {
+          apiKey: process.env.STRIPE_SECRET_KEY,
+          webhookSecret: process.env.STRIPE_SELLERS_WEBHOOK_SECRET,
+        },
+      },
+    ],
+    onboarding: {
+      returnUrl: `${process.env.VENDOR_URL}/stripe`,
+      refreshBaseUrl: process.env.BACKEND_URL,
+    },
+  },
+}
+```
+
+## API examples
+
+### Get seller's payout account (Vendor API)
+
+```bash
+curl http://localhost:9000/vendor/payout-accounts/<account-id> \
+  -H "Authorization: Bearer <seller-token>"
+```
+
+### Create payout onboarding (Vendor API)
+
+Initiates provider onboarding (e.g. Stripe Connect account setup). `refresh_url` and `return_url` come from the module's `onboarding` options:
+
+```bash
+curl -X POST http://localhost:9000/vendor/payout-accounts/<account-id>/onboarding \
+  -H "Authorization: Bearer <seller-token>" \
+  -H "Content-Type: application/json" \
+  -d '{}'
+```
+
+### List payouts (Admin API)
+
+```bash
+curl http://localhost:9000/admin/payouts \
+  -H "Authorization: Bearer <admin-token>"
+```
+
+## Provider abstraction
+
+The payout module is **provider-agnostic**. A `PayoutProviderService` acts as a bridge to the external payment processor. It delegates all external operations — creating accounts, processing payouts, parsing webhooks — to a pluggable provider implementation.
+
+The module expects exactly one payout provider per marketplace, and loads the built-in `system` provider when none is registered. Provider-specific data is stored in the `data` JSON fields on accounts, payouts, reversals, and onboarding records.

@@ -1,0 +1,106 @@
+---
+title: "Answer a review as a store"
+sidebarTitle: "Respond to a review"
+description: "Attach a store's public answer to a review with respondReviewWorkflow."
+---
+
+Run `respondReviewWorkflow` to attach a store’s answer to a review, for example from a custom vendor route or a support tool. The workflow writes `seller_note` once and refuses to overwrite an existing answer.
+
+## Before you begin
+
+Check which reviews a store may answer before you build on this workflow:
+
+- **Seller reviews only**: product reviews have no seller link, so the built-in Vendor API can’t reach them
+- **One answer per review**: a second call fails until `seller_note` is cleared
+- **No status change**: answering leaves `status` as it is
+
+<Steps>
+  <Step title="Check that the review belongs to the store">
+    Look up the seller link before you write. The built-in Vendor route runs the same check:
+
+    ```ts title="src/api/vendor/review-answers/[id]/helpers.ts"
+    import { MedusaContainer } from "@medusajs/framework"
+    import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+
+    export async function storeOwnsReview(
+      scope: MedusaContainer,
+      sellerId: string,
+      reviewId: string
+    ) {
+      const query = scope.resolve(ContainerRegistrationKeys.QUERY)
+      const { data } = await query.graph({
+        entity: "seller_seller_review_review",
+        fields: ["review_id"],
+        filters: { seller_id: sellerId, review_id: reviewId },
+      })
+
+      return data.length > 0
+    }
+    ```
+
+    `seller_seller_review_review` is the link table between sellers and reviews.
+  </Step>
+  <Step title="Run the workflow">
+    Call `respondReviewWorkflow` with the review id and the answer:
+
+    ```ts title="src/api/vendor/review-answers/[id]/route.ts" {16-18}
+    import type {
+      AuthenticatedMedusaRequest,
+      MedusaResponse,
+    } from "@medusajs/framework/http"
+    import { MedusaError } from "@medusajs/framework/utils"
+    import { respondReviewWorkflow } from "@mercurjs/core/workflows"
+    import { storeOwnsReview } from "./helpers"
+
+    export async function POST(req: AuthenticatedMedusaRequest<{
+      seller_note: string
+    }>, res: MedusaResponse) {
+      const sellerId = req.seller_context!.seller_id
+      if (!(await storeOwnsReview(req.scope, sellerId, req.params.id))) {
+        throw new MedusaError(MedusaError.Types.NOT_FOUND, "Review not found")
+      }
+      const { result } = await respondReviewWorkflow(req.scope).run({
+        input: { id: req.params.id, seller_note: req.body.seller_note },
+      })
+
+      res.json({ review: result })
+    }
+    ```
+
+    Mercur fills `req.seller_context` on `/vendor` routes with the signed-in member’s current store.
+  </Step>
+</Steps>
+
+## Handle a second answer
+
+`respondReviewWorkflow` throws in two cases:
+
+- **`NOT_FOUND`, “Review not found”**: no review has this id
+- **`NOT_ALLOWED`, “This review already has a response”**: `seller_note` is already set
+
+The built-in routes return `400` for the second case. If a later step fails after the write, the workflow sets `seller_note` back to `null`.
+
+## Replace an existing answer
+
+The respond workflow never overwrites. To replace an answer, clear it with `updateReviewWorkflow`, then respond again:
+
+```ts
+await updateReviewWorkflow(container).run({
+  input: { id: "rev_01JD8Q1234567", seller_note: null },
+})
+
+await respondReviewWorkflow(container).run({
+  input: {
+    id: "rev_01JD8Q1234567",
+    seller_note: "Sorry for the delay, a replacement is on its way.",
+  },
+})
+```
+
+Import both workflows from `@mercurjs/core/workflows`. The built-in APIs cap `seller_note` at 300 characters, while the workflow itself doesn’t.
+
+## Next steps
+
+- [Publish the review so the answer is shown](/platform/review/guides/moderate-a-review)
+- [Learn why stores see only seller reviews](/platform/review/concepts/product-vs-seller-reviews)
+- [Check respondReviewWorkflow’s input](/platform/review/reference/workflows)

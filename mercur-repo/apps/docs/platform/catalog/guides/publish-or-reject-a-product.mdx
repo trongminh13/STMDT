@@ -1,0 +1,144 @@
+---
+title: "Publish or reject a proposed product"
+sidebarTitle: "Publish or reject"
+description: "Review a store's product submission from server code: publish it, reject it, or ask for a revision."
+---
+
+Run Mercur's review workflows to decide on a `proposed` product from a custom route, a subscriber, or a scheduled job. Each one checks the status, records who reviewed the product, and emits an event.
+
+## Before you begin
+
+You need the following in place:
+
+- A product in `proposed` status, such as a store submission
+- The id of the operator or system acting, for the audit record
+
+The workflows fail with a `NOT_ALLOWED` error for any product that isn't `proposed`.
+
+## Review a product
+
+<Steps>
+  <Step title="Publish it">
+    `confirmProductsWorkflow` publishes one or more products in a single run. `internal_note` is stored on each audit record for operators.
+
+    ```ts title="src/api/admin/reviews/publish/route.ts"
+    import type {
+      AuthenticatedMedusaRequest,
+      MedusaResponse,
+    } from "@medusajs/framework/http"
+    import { confirmProductsWorkflow } from "@mercurjs/core/workflows"
+
+    type Body = { product_ids: string[] }
+
+    export async function POST(
+      req: AuthenticatedMedusaRequest<Body>,
+      res: MedusaResponse
+    ) {
+      await confirmProductsWorkflow(req.scope).run({
+        input: {
+          product_ids: req.body.product_ids,
+          actor_id: req.auth_context.actor_id,
+          internal_note: "Checked against the supplier sheet",
+        },
+      })
+
+      res.json({ published: req.body.product_ids })
+    }
+    ```
+
+    If any product isn't `proposed`, the run fails and none of them change.
+  </Step>
+  <Step title="Or reject it">
+    `rejectProductWorkflow` handles one product. `message` is stored as the change's `external_note`, the note the store can read.
+
+    ```ts
+    import { rejectProductWorkflow } from "@mercurjs/core/workflows"
+
+    await rejectProductWorkflow(container).run({
+      input: {
+        product_id: "prod_01JD8Q1234567",
+        message: "Images don't match the description",
+        actor_id: "user_01JD8Q1234567",
+      },
+    })
+    ```
+
+    The product moves to `rejected` and leaves the store's product list.
+  </Step>
+  <Step title="Or ask for a revision">
+    `requestProductChangeWorkflow` keeps the product `proposed` and records a `CHANGE_REQUESTED` action with your message.
+
+    ```ts
+    import { requestProductChangeWorkflow } from "@mercurjs/core/workflows"
+
+    await requestProductChangeWorkflow(container).run({
+      input: {
+        product_id: "prod_01JD8Q1234567",
+        message: "Add a size B variant",
+        actor_id: "user_01JD8Q1234567",
+      },
+    })
+    ```
+
+    The product stays in the review queue, and your message is stored as the change's `external_note`.
+  </Step>
+</Steps>
+
+## Run a review from a subscriber
+
+Review products automatically by running a workflow when they're created. This subscriber publishes products from one trusted store.
+
+```ts title="src/subscribers/auto-publish-trusted.ts"
+import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
+import { confirmProductsWorkflow } from "@mercurjs/core/workflows"
+
+export default async function autoPublish({
+  event,
+  container,
+}: SubscriberArgs<{ id: string }>) {
+  const query = container.resolve("query")
+  const { data: [action] } = await query.graph({
+    entity: "product_change_action",
+    fields: ["product_change.created_by"],
+    filters: { product_id: event.data.id, action: "PRODUCT_ADD" },
+  })
+  if (action?.product_change?.created_by !== "sel_01JD8Q1234567") return
+
+  await confirmProductsWorkflow(container).run({
+    input: { product_ids: [event.data.id], actor_id: "system" },
+  })
+}
+
+export const config: SubscriberConfig = { event: "product.created" }
+```
+
+The handler reads the `PRODUCT_ADD` record to find the submitter, then publishes. `product.created` fires twice for each product created through Mercur's workflow, so the second run fails the `proposed` check. Catch that error, or check the status first.
+
+## React to the outcome with hooks
+
+Each review workflow exposes a hook that runs after the status change. Use it for side effects that must happen inside the same run.
+
+| Workflow | Hook | Hook input |
+| --- | --- | --- |
+| `confirmProductsWorkflow` | `productsConfirmed` | `product_ids`, `internal_note`, `additional_data` |
+| `rejectProductWorkflow` | `productRejected` | `product_id`, `message`, `additional_data` |
+| `requestProductChangeWorkflow` | `productChangeRequested` | `product_id`, `message`, `additional_data` |
+
+```ts title="src/workflows/hooks/product-rejected.ts"
+import { rejectProductWorkflow } from "@mercurjs/core/workflows"
+
+rejectProductWorkflow.hooks.productRejected(
+  async ({ product_id, message }, { container }) => {
+    const logger = container.resolve("logger")
+    logger.info(`Rejected ${product_id}: ${message ?? "no reason"}`)
+  }
+)
+```
+
+For work that can run later, subscribe to `product.published`, `product.rejected`, or `product.change-requested` instead.
+
+## Next steps
+
+- [Event reference](/platform/catalog/reference/events) for payloads
+- [Status lifecycle](/platform/catalog/concepts/status-lifecycle) for every transition
+- [Request a revision](/platform/product-edit/guides/request-a-revision) for edits to published products

@@ -1,0 +1,339 @@
+import { HttpTypes } from "@medusajs/types";
+import { ColumnDef } from "@tanstack/react-table";
+import {
+  useExtendableGrid,
+  usePermissions,
+} from "@mercurjs/dashboard-shared";
+import { useCallback, useMemo } from "react";
+import { useFormContext, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+
+import {
+  createDataGridExtensionColumn,
+  createDataGridHelper,
+  createDataGridLocationStockColumns,
+  createDataGridPriceColumns,
+  DataGrid,
+} from "../../../../components/data-grid";
+import { Thumbnail } from "../../../../components/common/thumbnail";
+import { useRouteModal } from "../../../../components/modals";
+import { defineTabMeta } from "../../../../components/tabbed-form/types";
+import { usePricePreferences } from "../../../../hooks/api/price-preferences";
+import { useOfferConditions } from "../../../../hooks/api/offer-conditions";
+import { useShippingProfiles } from "../../../../hooks/api/shipping-profiles";
+import { useStockLocations } from "../../../../hooks/api/stock-locations";
+import { useSellerCurrencies } from "../../common/use-seller-currencies";
+import { CreateOfferFormValues, OfferVariantRow } from "./schema";
+
+type ShippingProfileLite = { id: string; name?: string | null };
+type OfferConditionLite = { id: string; label: string };
+
+/**
+ * The grid interleaves a non-editable product "group" row above each
+ * product's variants (SPEC-009 / Figma `40016485:530743`). The form's
+ * `variants` array stays variant-only; each variant grid row carries its
+ * `__formIndex` so field paths bind to the right form entry regardless of
+ * the interleaved group rows.
+ */
+type ProductGroupRow = {
+  __group: true;
+  id: string;
+  product_title: string;
+};
+type VariantGridRow = OfferVariantRow & {
+  __group?: false;
+  __formIndex: number;
+};
+type GridRow = ProductGroupRow | VariantGridRow;
+
+const isGroup = (row: GridRow): row is ProductGroupRow =>
+  (row as ProductGroupRow).__group === true;
+
+const LOCKED_COLUMN_IDS = ["title"];
+
+const rowPath = (row: GridRow) =>
+  isGroup(row) ? null : `variants.${row.__formIndex}`;
+
+const Root = () => {
+  const form = useFormContext<CreateOfferFormValues>();
+  const { setCloseOnEscape } = useRouteModal();
+
+  const { currencies, regions } = useSellerCurrencies();
+  const { can } = usePermissions();
+  const { stock_locations } = useStockLocations(
+    { limit: 100 },
+    { enabled: can("stock_locations") }
+  );
+  const { shipping_profiles } = useShippingProfiles(
+    { limit: 100 },
+    { enabled: can("shipping_profiles") }
+  ) as {
+    shipping_profiles?: ShippingProfileLite[];
+  };
+  const { offer_conditions } = useOfferConditions();
+  const { price_preferences: pricePreferences } = usePricePreferences(
+    {},
+    { enabled: can("price_preferences") }
+  );
+  const variants = useWatch({
+    control: form.control,
+    name: "variants",
+  }) as OfferVariantRow[] | undefined;
+
+  const gridData = useMemo<GridRow[]>(() => {
+    const rows: GridRow[] = [];
+    let lastProductId: string | undefined;
+    (variants ?? []).forEach((variant, index) => {
+      if (variant.product_id !== lastProductId) {
+        rows.push({
+          __group: true,
+          id: `group-${variant.product_id}`,
+          product_title: variant.product_title,
+        });
+        lastProductId = variant.product_id;
+      }
+      rows.push({ ...variant, __group: false, __formIndex: index });
+    });
+    return rows;
+  }, [variants]);
+
+  const baseColumns = useColumns({
+    currencies,
+    stockLocations: stock_locations as
+      | HttpTypes.AdminStockLocation[]
+      | undefined,
+    shippingProfiles: shipping_profiles ?? [],
+    offerConditions: offer_conditions ?? [],
+    pricePreferences,
+    regions,
+  });
+
+  const createColumn = useCallback(
+    createDataGridExtensionColumn<GridRow, CreateOfferFormValues>,
+    []
+  );
+
+  const columns = useExtendableGrid<GridRow>({
+    model: "offer",
+    zone: "create",
+    tab: "stockLevelsAndPrices",
+    columns: baseColumns as ColumnDef<GridRow, unknown>[],
+    lockedColumnIds: LOCKED_COLUMN_IDS,
+    getRowPath: rowPath,
+    createColumn,
+  });
+
+  return (
+    <div
+      className="flex size-full flex-col overflow-hidden"
+      data-testid="offer-create-tab-stockLevelsAndPrices"
+    >
+      <DataGrid
+        columns={columns}
+        data={gridData}
+        state={form}
+        onEditingChange={(editing) => setCloseOnEscape(!editing)}
+      />
+    </div>
+  );
+};
+
+type ColumnArgs = {
+  currencies?: string[];
+  stockLocations?: HttpTypes.AdminStockLocation[];
+  shippingProfiles?: ShippingProfileLite[];
+  offerConditions?: OfferConditionLite[];
+  pricePreferences?: HttpTypes.AdminPricePreference[];
+  regions?: HttpTypes.AdminRegion[];
+};
+
+const columnHelper = createDataGridHelper<GridRow, CreateOfferFormValues>();
+
+const useColumns = ({
+  currencies = [],
+  stockLocations = [],
+  shippingProfiles = [],
+  offerConditions = [],
+  pricePreferences = [],
+  regions = [],
+}: ColumnArgs) => {
+  const { t } = useTranslation();
+
+  return useMemo(() => {
+    const shippingProfileOptions = shippingProfiles.map((p) => ({
+      value: p.id,
+      label: p.name ?? p.id,
+    }));
+    const conditionOptions = offerConditions.map((c) => ({
+      value: c.id,
+      label: c.label,
+    }));
+    const cellCurrencies = Array.from(
+      new Set([...currencies, ...regions.map((r) => r.currency_code)])
+    );
+
+    return [
+      columnHelper.column({
+        id: "title",
+        header: t("fields.title"),
+        cell: (context) => {
+          const row = context.row.original;
+          if (isGroup(row)) {
+            return (
+              <DataGrid.ReadonlyCell context={context}>
+                <span
+                  className="text-ui-fg-subtle truncate font-medium"
+                  title={row.product_title}
+                >
+                  {row.product_title}
+                </span>
+              </DataGrid.ReadonlyCell>
+            );
+          }
+          const title = row.variant_title || "";
+          return (
+            <DataGrid.ReadonlyCell context={context}>
+              <div className="flex h-full w-full items-center gap-x-2 overflow-hidden">
+                <Thumbnail src={row.product_thumbnail ?? null} />
+                <span className="truncate" title={title}>
+                  {title}
+                </span>
+              </div>
+            </DataGrid.ReadonlyCell>
+          );
+        },
+        disableHiding: true,
+      }),
+      columnHelper.column({
+        id: "sku",
+        name: t("fields.sku"),
+        header: t("fields.sku"),
+        field: (context) => {
+          const row = context.row.original;
+          return isGroup(row) ? null : `variants.${row.__formIndex}.sku`;
+        },
+        type: "text",
+        cell: (context) =>
+          isGroup(context.row.original) ? (
+            <DataGrid.ReadonlyCell context={context} />
+          ) : (
+            <DataGrid.TextCell context={context} />
+          ),
+      }),
+      columnHelper.column({
+        id: "shipping_profile",
+        name: t("offers.fields.shippingProfile"),
+        header: t("offers.fields.shippingProfile"),
+        field: (context) => {
+          const row = context.row.original;
+          return isGroup(row)
+            ? null
+            : `variants.${row.__formIndex}.shipping_profile_id`;
+        },
+        type: "select",
+        cell: (context) =>
+          isGroup(context.row.original) ? (
+            <DataGrid.ReadonlyCell context={context} />
+          ) : (
+            <DataGrid.SelectCell
+              context={context}
+              options={shippingProfileOptions}
+              placeholder=""
+            />
+          ),
+      }),
+      columnHelper.column({
+        id: "condition",
+        name: t("offers.fields.condition"),
+        header: t("offers.fields.condition"),
+        field: (context) => {
+          const row = context.row.original;
+          return isGroup(row) ? null : `variants.${row.__formIndex}.condition_id`;
+        },
+        type: "select",
+        cell: (context) =>
+          isGroup(context.row.original) ? (
+            <DataGrid.ReadonlyCell context={context} />
+          ) : (
+            <DataGrid.SelectCell
+              context={context}
+              options={conditionOptions}
+              placeholder=""
+            />
+          ),
+      }),
+      columnHelper.column({
+        id: "leadtime_to_ship",
+        name: t("offers.fields.leadtime"),
+        header: t("offers.fields.leadtime"),
+        field: (context) => {
+          const row = context.row.original;
+          return isGroup(row)
+            ? null
+            : `variants.${row.__formIndex}.leadtime_to_ship`;
+        },
+        type: "number",
+        cell: (context) =>
+          isGroup(context.row.original) ? (
+            <DataGrid.ReadonlyCell context={context} />
+          ) : (
+            <DataGrid.NumberCell
+              context={context}
+              min={0}
+              placeholder={t("offers.fields.storeDefault")}
+            />
+          ),
+      }),
+      ...createDataGridLocationStockColumns<GridRow, CreateOfferFormValues>({
+        stockLocations,
+        isReadyOnly: (context) => isGroup(context.row.original),
+        getFieldName: (context, index) => {
+          const row = context.row.original;
+          if (isGroup(row)) return null;
+          const location = stockLocations[index];
+          if (!location) return null;
+          return `variants.${row.__formIndex}.inventory.${location.id}`;
+        },
+        t,
+      }),
+      ...createDataGridPriceColumns<GridRow, CreateOfferFormValues>({
+        currencies,
+        pricePreferences,
+        isReadyOnly: (context) => isGroup(context.row.original),
+        getFieldName: (context, value) => {
+          const row = context.row.original;
+          if (isGroup(row)) return null;
+          return `variants.${row.__formIndex}.prices.${value}`;
+        },
+        t,
+      }),
+      ...createDataGridPriceColumns<GridRow, CreateOfferFormValues>({
+        currencies: cellCurrencies,
+        regions,
+        pricePreferences,
+        isReadyOnly: (context) => isGroup(context.row.original),
+        getFieldName: (context, value) => {
+          const row = context.row.original;
+          if (isGroup(row)) return null;
+          return `variants.${row.__formIndex}.region_prices.${value}`;
+        },
+        t,
+      }).filter((column) => column.id?.startsWith("region_prices")),
+    ];
+  }, [
+    t,
+    currencies,
+    stockLocations,
+    shippingProfiles,
+    offerConditions,
+    pricePreferences,
+    regions,
+  ]);
+};
+
+Root._tabMeta = defineTabMeta<CreateOfferFormValues>({
+  id: "stockLevelsAndPrices",
+  labelKey: "offers.create.tabs.stockLevelsAndPrices",
+});
+
+export const CreateOfferStockLevelsAndPricesTab = Root;

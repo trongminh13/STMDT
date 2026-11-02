@@ -1,0 +1,64 @@
+---
+title: "Product reviews and store reviews"
+sidebarTitle: "Product vs seller reviews"
+description: "How the reference field picks a review's target, and the four links that anchor every review."
+---
+
+A customer can rate the product they bought, the store that sold it, or both. Mercur uses one `Review` model for both cases and sets `reference` to `product` or `seller` to say which one a review rates. The target itself is stored as a module link, written when the review is created, alongside links to the order and the customer.
+
+## The reference field picks the link
+
+You pass `reference` and `reference_id` to `createReviewWorkflow`. The workflow stores `reference` on the review, then writes one link from `reference_id` to the review:
+
+| `reference` | `reference_id` is | Link written |
+| --- | --- | --- |
+| `product` | A product id, such as `prod_01JD8Q1234567` | Product to review |
+| `seller` | A seller id, such as `sel_01JD8Q1234567` | Seller to review |
+
+`reference_id` isn’t stored on the review. To read the target back, follow the relation that matches `reference`:
+
+```ts
+const { data: [review] } = await query.graph({
+  entity: "review",
+  fields: ["id", "reference", "rating", "product.title", "seller.name"],
+  filters: { id: "rev_01JD8Q1234567" },
+})
+
+const target = review.reference === "product"
+  ? review.product
+  : review.seller
+```
+
+Only one of `review.product` and `review.seller` is set on any review.
+
+<Note>
+  Products are Mercur’s shared master catalog, not owned by a store. A product review rates the master product, so it has no link to the store that sold it. Only seller reviews are linked to a seller.
+</Note>
+
+## Every review links to its order and customer
+
+Apart from its target, each review is linked to the order that earned it and the customer who wrote it. The `create-review` step writes both links in the same step that creates the record. These links back the ownership checks across the APIs:
+
+- **Store API**: a customer can read, edit, and delete only reviews linked to their customer id
+- **Vendor API**: a store can list, read, and answer only reviews linked to its seller id
+- **Validation**: duplicate checks look up existing reviews through the order link
+
+## Stores see only seller reviews
+
+Because product reviews carry no seller link, the Vendor API never returns them. `GET /vendor/reviews` filters on the seller link, and answering a review checks the same link. A store can’t answer a review of a product it sells: only an operator can, through the Admin API.
+
+## One review per target per order
+
+`createReviewWorkflow` rejects a second review of the same target from the same order. It loads every review linked to `order_id` and fails with “Review already exists” when one has the same `reference` and the same target id. It also fails with “Order not found!” when the order doesn’t belong to `customer_id`.
+
+<Tip>
+  One order can back several reviews, one per distinct target. A customer can rate the master product and the store from the same order, as order `#1001` does in the overview figure.
+</Tip>
+
+The workflow doesn’t check that `reference_id` appears in the order. A customer with any order can review any product or seller id. Add that check in your own route if your marketplace needs it.
+
+## Related
+
+- [The four review links and their query.graph aliases](/platform/review/reference/links)
+- [Respond to a review as a store](/platform/review/guides/respond-to-a-review)
+- [What a review stores](/platform/review/concepts/the-review-model)

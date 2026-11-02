@@ -1,0 +1,252 @@
+import type { ComponentType, ReactNode } from "react"
+
+/**
+ * Minimal structural stand-in for a Zod schema, so the SDK stays free of a zod
+ * dependency. `createFormHelper` (in `@mercurjs/dashboard-shared`) produces real
+ * zod schemas that satisfy this shape.
+ */
+export type FieldValidation = {
+    safeParse?: (value: unknown) => unknown
+    parse?: (value: unknown) => unknown
+    def?: { type?: string }
+    _def?: unknown
+}
+
+/**
+ * Per-model registry seeded by each panel's generated `extension-targets.d.ts`
+ * and extendable by hand. Shapes the typed form/display zones per model.
+ *
+ * @example
+ * declare module "@mercurjs/dashboard-sdk" {
+ *   interface CustomFieldsRegistry {
+ *     product: {
+ *       formZones: "create" | "edit" | "organize" | "attributes"
+ *       formTabs: { create: "general" | "organize"; edit: never }
+ *       displayZones: "general" | "organize"
+ *     }
+ *   }
+ * }
+ */
+export interface CustomFieldsRegistry {}
+
+type DefaultModelShape = {
+  formZones: string
+  formTabs: Record<string, string>
+  formFieldIds: string
+  displayZones: string
+  displayFieldIds: string
+  listZones: string
+  listColumnIds: string
+}
+
+export type CustomFieldModel = keyof CustomFieldsRegistry extends never
+  ? string
+  : keyof CustomFieldsRegistry
+
+type ModelShape<TModel> = TModel extends keyof CustomFieldsRegistry
+  ? CustomFieldsRegistry[TModel] & DefaultModelShape
+  : DefaultModelShape
+
+/** The bound form value handed to a custom field `component`. */
+export type CustomFormFieldControl = {
+  name: string
+  value: unknown
+  onChange: (value: unknown) => void
+  onBlur: () => void
+}
+
+export type CustomFormFieldComponentProps = {
+  field?: CustomFormFieldControl
+  data?: unknown
+}
+
+export type CustomFormFieldOption = {
+  label: string
+  value: string
+}
+
+export type CustomFormField<TData = unknown> = {
+  /** Zod schema — drives the input type and validation. */
+  validation: FieldValidation
+  /** Static default or a resolver from the loaded entity. */
+  defaultValue?: ((data: TData) => unknown) | unknown
+  label?: string
+  description?: string
+  placeholder?: string
+  /**
+   * Input kind for hosts that can't infer it from `validation` (data grids).
+   * `select` reads its choices from `options`.
+   */
+  type?: "text" | "number" | "boolean" | "select"
+  options?: CustomFormFieldOption[]
+  /** Custom render component; falls back to a default input for the type. */
+  component?: ComponentType<CustomFormFieldComponentProps>
+}
+
+export type CustomFormZone<TModel> = ModelShape<TModel>["formZones"]
+
+/**
+ * Valid tab ids for a model's form zone. Narrows to the scanned union when the
+ * zone has tabbed forms; falls back to `string` for zones without tabs (e.g.
+ * onboarding steps) and for unknown models.
+ */
+export type CustomFormTab<TModel, TZone> =
+  TZone extends keyof ModelShape<TModel>["formTabs"]
+    ? ModelShape<TModel>["formTabs"][TZone]
+    : string
+
+/**
+ * Onboarding wizard step settings, read only for `zone: "onboarding"`. A tab id
+ * the wizard doesn't ship becomes a new step; on a built-in step these override
+ * its defaults. Built-in ranks: store 10, address 20, company 30, payment 40.
+ */
+export type OnboardingStepOptions = {
+  /** Step heading. Required in practice for new steps. */
+  label?: string
+  /** Sort position. New steps without a rank go last. */
+  rank?: number
+  /** Shows a Skip button on the step. */
+  optional?: boolean
+}
+
+export type CustomFormEntry<TModel> =
+  CustomFormZone<TModel> extends infer TZone
+    ? TZone extends CustomFormZone<TModel>
+      ?
+          | ({
+              zone: TZone
+              /** TabbedForm tab id, or onboarding wizard step id for `zone: "onboarding"`. */
+              tab?: CustomFormTab<TModel, TZone>
+              /**
+               * ADD (unknown key, stored under `additional_data`), REPLACE
+               * (built-in key + a field with a `component`), or REMOVE
+               * (built-in key + `null`) a form field or data-grid column.
+               */
+              fields?: Partial<
+                Record<ModelShape<TModel>["formFieldIds"], CustomFormField | null>
+              > &
+                Record<string, CustomFormField | null>
+              disabled?: false
+            } & OnboardingStepOptions)
+          | {
+              zone: TZone
+              tab: CustomFormTab<TModel, TZone>
+              /** Removes a built-in onboarding step. The store step can't be removed. */
+              disabled: true
+              fields?: never
+            }
+      : never
+    : never
+
+/**
+ * ADD (unknown id + component), REPLACE (built-in id + component), or REMOVE
+ * (built-in id + `component: null`) a section field. Built-in ids autocomplete
+ * from the model's generated `displayFieldIds`; any other string adds a new row.
+ */
+export type CustomDisplayField<TModel = unknown> = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  id: ModelShape<TModel>["displayFieldIds"] | (string & {})
+  component: ComponentType<{ data?: unknown }> | null
+}
+
+/** Same `{ rank?, component }` shape as list bulk actions. */
+export type SectionAction = {
+  rank?: number
+  component: ComponentType<{ data?: unknown }>
+}
+
+export type CustomDisplayEntry<TModel> = {
+  zone: ModelShape<TModel>["displayZones"]
+  fields?: CustomDisplayField<TModel>[]
+  actions?: SectionAction[]
+}
+
+/**
+ * ADD (unknown id), REPLACE (built-in id + `component`) a table column. Hide a
+ * built-in column with `viewDefaults.columnVisibility[id] = false`.
+ */
+export type CustomColumn<TModel = unknown> = {
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  id: ModelShape<TModel>["listColumnIds"] | (string & {})
+  header?: string
+  component?: ComponentType<{ row?: unknown; value?: unknown }>
+}
+
+export type CustomListFilterOption = {
+  label: string
+  value: unknown
+}
+
+/**
+ * ADD (unknown key), REPLACE (built-in key + a full filter definition), or
+ * REMOVE (built-in key + `remove: true`) a list filter. Mirrors
+ * `CustomDisplayField`: the `key` is the query param the filter writes.
+ */
+export type CustomListFilter =
+  | ({ key: string; label: string; remove?: never } & (
+      | {
+          type: "select"
+          options: CustomListFilterOption[]
+          multiple?: boolean
+          searchable?: boolean
+        }
+      | { type: "date" | "string" | "number"; options?: never }
+    ))
+  | { key: string; remove: true }
+
+export type CustomListExtension<TModel = unknown> = {
+  /**
+   * Table the block extends. Omitted means the model's list page (`"list"`);
+   * other tables of the model (e.g. a detail section) have their own zone.
+   */
+  zone?: ModelShape<TModel>["listZones"]
+  columns?: CustomColumn<TModel>[]
+  bulkActions?: SectionAction[]
+  filters?: CustomListFilter[]
+  viewDefaults?: {
+    columnVisibility?: Partial<
+      Record<ModelShape<TModel>["listColumnIds"], boolean>
+    > &
+      Record<string, boolean>
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    columnOrder?: (ModelShape<TModel>["listColumnIds"] | (string & {}))[]
+  }
+}
+
+/**
+ * Action ids a plugin can lock per model. `order` narrows to the RMA and payment
+ * actions the order detail sections guard; other models accept any string.
+ */
+export interface CustomFieldActionRegistry {
+  order: "edit" | "return" | "exchange" | "claim" | "fulfill" | "capture" | "refund"
+}
+
+export type CustomFieldAction<TModel> = TModel extends keyof CustomFieldActionRegistry
+  ? CustomFieldActionRegistry[TModel]
+  : string
+
+export type ActivityEntry = {
+  title: ReactNode
+  timestamp: string | Date
+  children?: ReactNode
+}
+
+export interface CustomFieldsConfig<TModel extends CustomFieldModel = CustomFieldModel> {
+  model: TModel
+  /** Module link(s) fetched alongside the entity (e.g. `brand`). */
+  link?: string | string[]
+  /**
+   * Reasons an action on this entity is unavailable, keyed by action id. A
+   * returned string disables the action and becomes its tooltip; `undefined`
+   * leaves it alone. Evaluated on render with the entity as fetched, including
+   * `link` data.
+   */
+  actionLocks?: Partial<
+    Record<CustomFieldAction<TModel>, (entity: unknown) => string | undefined>
+  >
+  /** Extra timeline entries for the entity, merged and sorted with the built-ins. */
+  activity?: (entity: unknown) => ActivityEntry[]
+  list?: CustomListExtension<TModel> | CustomListExtension<TModel>[]
+  forms?: CustomFormEntry<TModel>[]
+  displays?: CustomDisplayEntry<TModel>[]
+}

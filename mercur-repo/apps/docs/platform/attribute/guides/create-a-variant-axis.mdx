@@ -1,0 +1,132 @@
+---
+title: "Create a variant axis and build variants on it"
+sidebarTitle: "Create a variant axis"
+description: "Create a multi_select axis attribute, then create a product whose variants bind to it."
+---
+
+Create a variant axis such as Size, then create a product that uses part of it and has one variant per selected value. You need this whenever products in your catalog come in sizes, colors, or any other dimension shoppers pick between.
+
+## Before you begin
+
+You need the following:
+
+- **A Mercur server**: an API app with `@mercurjs/core` registered through `withMercur()`
+- **The concept**: read [Variant axes and product options](/platform/attribute/concepts/variant-axes) to see how an axis maps to a Medusa `ProductOption`
+
+## Build the axis and the product
+
+<Steps>
+  <Step title="Create the axis attribute">
+    An axis is a `multi_select` attribute with `is_variant_axis: true`. The workflow creates a global `ProductOption` titled `Size` with the same three values.
+
+    ```ts title="src/scripts/seed-size-axis.ts"
+    import type { ExecArgs } from "@medusajs/framework/types"
+    import { AttributeType } from "@mercurjs/types"
+    import { createProductAttributesWorkflow } from "@mercurjs/core/workflows"
+
+    export default async function seedSizeAxis({ container }: ExecArgs) {
+      const { result } = await createProductAttributesWorkflow(container).run({
+        input: {
+          attributes: [
+            {
+              name: "Size",
+              type: AttributeType.MULTI_SELECT,
+              is_variant_axis: true,
+              is_filterable: true,
+              values: [{ name: "S" }, { name: "M" }, { name: "L" }],
+            },
+          ],
+        },
+      })
+
+      container.resolve("logger").info(`Created axis ${result[0].id}`)
+    }
+    ```
+
+    Run it with `npx medusa exec ./src/scripts/seed-size-axis.ts`. Medusa keeps global option titles unique, so a second global axis named `Size` fails.
+  </Step>
+  <Step title="Create a product on the axis">
+    Mercur’s `createProductsWorkflow` takes `attributes` and `variants` together. It attaches the axis with the values you pick, then creates the variants against it.
+
+    ```ts
+    import { createProductsWorkflow } from "@mercurjs/core/workflows"
+
+    const { result } = await createProductsWorkflow(req.scope).run({
+      input: {
+        created_by: req.auth_context.actor_id,
+        products: [
+          {
+            title: "Linen shirt",
+            attributes: [
+              {
+                id: "pattr_01JD8Q1234567",
+                value_ids: ["pattrval_01JD8Q1", "pattrval_01JD8Q2"],
+              },
+            ],
+            variants: [
+              { title: "Linen shirt / S", options: { Size: "S" } },
+              { title: "Linen shirt / M", options: { Size: "M" } },
+            ],
+          },
+        ],
+      },
+    })
+    ```
+
+    Run this inside an authenticated route handler, so `req.auth_context.actor_id` records who created the product. Each variant names its option value by the option title, which is the attribute name. The product only holds `S` and `M`, so those are the variants it can have.
+  </Step>
+</Steps>
+
+## Change the values a product uses
+
+Run `createAndLinkProductAttributesToProductWorkflow` with an `update` entry to grow or shrink the subset. The workflow moves the option values on the product and the pivot links together.
+
+```ts
+await createAndLinkProductAttributesToProductWorkflow(req.scope).run({
+  input: {
+    product_id: "prod_01JD8Q1234567",
+    update: [
+      {
+        id: "pattr_01JD8Q1234567",
+        add: ["pattrval_01JD8Q3"],
+        remove: ["pattrval_01JD8Q1"],
+      },
+    ],
+  },
+})
+```
+
+After the run, the product offers `M` and `L`. Create the `L` variant with Medusa’s `createProductVariantsWorkflow` and `options: { Size: "L" }`.
+
+## Create an axis for one product
+
+When only one product needs a dimension, add an inline axis instead of a global one. It creates an exclusive option (`is_exclusive: true`), a product-scoped `multi_select` attribute, and its values, and attaches them to the product.
+
+```ts
+await createAndLinkProductAttributesToProductWorkflow(req.scope).run({
+  input: {
+    product_id: "prod_01JD8Q1234567",
+    add: [
+      { title: "Cut", is_variant_axis: true, values: ["Slim", "Regular"] },
+    ],
+  },
+})
+```
+
+An inline axis holds all of its values, so there’s no subset to pick. You add values to it later with `update` and `add: [{ value: "Relaxed" }]`.
+
+## Add values to a global axis
+
+`createProductAttributeValuesWorkflow` adds values to the attribute and to its global option in one run. Products don’t gain the new value until you add it to their subset.
+
+```ts
+await createProductAttributeValuesWorkflow(req.scope).run({
+  input: { attribute_id: "pattr_01JD8Q1234567", values: [{ name: "XL" }] },
+})
+```
+
+## Next steps
+
+- [Every add and update form for the batch workflow](/platform/attribute/guides/attach-attributes-to-a-product)
+- [Global and inline attributes](/platform/attribute/concepts/global-vs-inline)
+- [The workflows that keep the option in sync](/platform/attribute/reference/workflows)

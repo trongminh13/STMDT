@@ -1,0 +1,75 @@
+export interface PatchEntry {
+  /** Patch file under `patches/`, named `<package>@<generated-from-version>.patch`. */
+  file: string
+  package: string
+  /**
+   * Versions the patch is allowed to be attempted against. Applying is still
+   * gated on the diff's own context matching — this range only produces a
+   * clearer error than a failed hunk when a bump is known to be incompatible.
+   */
+  compatible: { from: string; to: string }
+  /** Surfaced in boot logs and in the error raised when the patch stops applying. */
+  reason: string
+}
+
+export const PATCHES: PatchEntry[] = [
+  {
+    file: "@medusajs+core-flows@2.18.0.patch",
+    package: "@medusajs/core-flows",
+    // Both targeted files are byte-identical from 2.17.2 through 2.22.0.
+    compatible: { from: "2.17.0", to: "2.23.0" },
+    reason:
+      "refreshCartShippingMethodsWorkflow deletes any shipping method whose " +
+      "profile is not required by a cart item, deriving that set from each " +
+      "item's master product. In Mercur the profile belongs to the offer — the " +
+      "product link is one-to-one and the first offerer wins it — so in a " +
+      "multi-seller cart holding a co-sold product every other seller's method " +
+      "is judged orphaned and checkout fails. The patch disables that cleanup. " +
+      "See mercurjs/mercur#1442.",
+  },
+  {
+    file: "@medusajs+core-flows@2.22.0-payment-hooks.patch",
+    package: "@medusajs/core-flows",
+    // 2.22.0 made refundPaymentWorkflow replay-safe (medusajs/medusa#16964),
+    // which moved the hunk this patch anchors on.
+    compatible: { from: "2.22.0", to: "2.23.0" },
+    reason:
+      "capturePaymentWorkflow and refundPaymentWorkflow end in an event and expose no " +
+      "hook, unlike createOrderWorkflow and cancelOrderWorkflow. A ledger that must " +
+      "record every capture and refund inside the movement's own transaction, with " +
+      "compensation, needs paymentCaptured and paymentRefunded.",
+  },
+  {
+    file: "@medusajs+core-flows@2.21.2-seller-promotion-scope.patch",
+    package: "@medusajs/core-flows",
+    compatible: { from: "2.21.0", to: "2.23.0" },
+    reason:
+      "prepareAdjustmentsFromPromotionActionsStep hands back every adjustment the " +
+      "promotion module computes for the whole cart, and every cart refresh runs it " +
+      "through updateCartPromotionsWorkflow. Without the seller scope applied in the " +
+      "step itself, a seller's promotion lands on other sellers' line items and " +
+      "shipping methods as soon as the cart is touched. See GHSA-w4vq-6jvh-cfpg.",
+  },
+  {
+    file: "@medusajs+core-flows@2.20.1-delivery-hook.patch",
+    package: "@medusajs/core-flows",
+    compatible: { from: "2.18.0", to: "2.23.0" },
+    reason:
+      "markOrderFulfillmentAsDeliveredWorkflow ends in an event and exposes no hook. " +
+      "Delivery is where a marketplace releases the seller's money from pending to " +
+      "payable, and that release must run in the delivery's own transaction, with " +
+      "compensation, so it needs fulfillmentDelivered.",
+  },
+  {
+    file: "@medusajs+order@2.21.2-cross-module-count.patch",
+    package: "@medusajs/order",
+    compatible: { from: "2.21.0", to: "2.23.0" },
+    reason:
+      "The order module's findAndCount runs find and count as two queries over " +
+      "the same where clause. A cross-module filter (filters.seller.id on orders, " +
+      "returns, claims, exchanges) is a MikroORM raw EXISTS fragment that the " +
+      "registry drops after its first use, so the count query renders the dead " +
+      "key as a column and every paginated vendor list 500s. The patch gives the " +
+      "count its own copy of each fragment.",
+  },
+]

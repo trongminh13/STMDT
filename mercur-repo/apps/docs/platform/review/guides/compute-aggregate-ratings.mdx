@@ -1,0 +1,82 @@
+---
+title: "Show average ratings on your storefront"
+sidebarTitle: "Aggregate ratings"
+description: "Serve average ratings for products and stores from a custom route, with the service helpers or from published reviews only."
+---
+
+Add a Store API route that returns a product’s or a store’s average rating, because core ships no public rating endpoint. You can call the Review module service’s rating helpers, which average every linked review, or compute the average from published reviews with `query.graph`.
+
+## Before you begin
+
+Pick the approach that matches what should count toward the number:
+
+- **Rating helpers**: one SQL query per call; counts `pending`, `rejected`, and soft deleted reviews too
+- **Published only**: loads the target’s reviews with `query.graph` and averages the `published` ones
+
+<Steps>
+  <Step title="Return a store's average from the service">
+    Resolve the service with `MercurModules.REVIEW` and call `getAvgRating`:
+
+    ```ts title="src/api/store/sellers/[id]/rating/route.ts"
+    import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+    import { MercurModules } from "@mercurjs/types"
+
+    export async function GET(req: MedusaRequest, res: MedusaResponse) {
+      const reviewService = req.scope.resolve(MercurModules.REVIEW)
+
+      const average = await reviewService.getAvgRating("seller", req.params.id)
+
+      res.json({ rating: average === null ? null : Number(average) })
+    }
+    ```
+
+    The first argument is `"product"` or `"seller"`, the second the target’s id. The method returns a numeric string, or `null` when the target has no reviews, so the route converts it to a number.
+  </Step>
+  <Step title="Average published reviews only">
+    Load the product’s linked reviews with `query.graph` and average the published ones:
+
+    ```ts title="src/api/store/products/[id]/rating/route.ts"
+    import type { MedusaRequest, MedusaResponse } from "@medusajs/framework/http"
+    import { ContainerRegistrationKeys } from "@medusajs/framework/utils"
+
+    export async function GET(req: MedusaRequest, res: MedusaResponse) {
+      const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
+      const { data: [product] } = await query.graph({
+        entity: "product",
+        fields: ["id", "reviews.rating", "reviews.status"],
+        filters: { id: req.params.id },
+      })
+
+      const ratings = (product?.reviews ?? [])
+        .filter((review) => review?.status === "published")
+        .map((review) => review!.rating)
+      const rating = ratings.length
+        ? ratings.reduce((sum, value) => sum + value, 0) / ratings.length
+        : null
+
+      res.json({ rating, count: ratings.length })
+    }
+    ```
+
+    `reviews` is the alias the product to review link adds to a product. Soft deleted reviews don’t come back from `query.graph`, so they never count.
+  </Step>
+</Steps>
+
+## Rate every product or store in one query
+
+For list pages, `getProductsWithRating` and `getSellersWithRating` return every row of the `product` or `seller` table with its average joined in:
+
+```ts
+const reviewService = container.resolve(MercurModules.REVIEW)
+
+const sellers = await reviewService.getSellersWithRating(["id", "name"])
+// [{ id: "sel_01JD8Q1234567", name: "ACME", rating: "4.5000000000000000" }]
+```
+
+Pass column names of the target table. Each row gains a `rating` string, or `null` for rows without reviews. The helpers take no filters or pagination and include soft deleted products and sellers, so filter the result before you return it.
+
+## Next steps
+
+- [Learn what the rating helpers count](/platform/review/concepts/ratings-and-moderation)
+- [See every service method](/platform/review/reference/service)
+- [Query reviews through their links](/platform/review/reference/links)

@@ -1,0 +1,69 @@
+---
+title: "Variants, categories, and collections"
+sidebarTitle: "Variants & categories"
+description: "The Medusa Product module models that structure the shared catalog, and the places Mercur extends them."
+---
+
+The shared catalog is built from Medusa's Product module models. Variants describe what a customer can buy, and categories, collections, tags, and types organize products for browsing. Mercur keeps these models as they are and changes how variants get their options and where a variant's price and stock come from.
+
+## Variants come from attributes
+
+A variant is one purchasable configuration of a master product: Medusa's `ProductVariant` model (id prefix `variant`). Each variant binds to one value of every product option, such as Size `M`.
+
+When you create a product through Mercur's `createProductsWorkflow`, you don't pass native `options`. You pass Mercur `attributes`, and every `multi_select` attribute marked `is_variant_axis` becomes a native `ProductOption`. Each variant then names its option values by title:
+
+```ts
+const product = {
+  title: "Linen shirt",
+  attributes: [
+    { title: "Size", is_variant_axis: true, values: ["S", "M"] },
+  ],
+  variants: [
+    { title: "S", options: { Size: "S" } },
+    { title: "M", options: { Size: "M" } },
+  ],
+}
+```
+
+Medusa requires every product to have at least one option. Mercur creates each product with an internal `__default__` option and removes it once a variant-axis attribute attaches a real one. Products without an axis keep it.
+
+## Price and stock live on offers
+
+A variant holds catalog data such as `title`, `sku`, `ean`, and dimensions. It doesn't hold a store's price or stock. Mercur's create workflow sets `manage_inventory` to `false` on new variants unless you pass it, because each store's stock lives on its [offer](/platform/offer/overview).
+
+- **Price**: an offer-scoped price on the variant's price set, matched by an `offer_id` rule
+- **Stock**: inventory items linked to the offer, not the variant
+- **SKU**: the store's own SKU on the offer, unique per store
+
+## Grouping models
+
+Products are organized with Medusa's native grouping models:
+
+| Model | Id prefix | Shape | Mercur extension |
+| --- | --- | --- | --- |
+| `ProductCategory` | `pcat` | Nested tree through `parent_category` | `media_images`, `sellers`, attribute link |
+| `ProductCollection` | `pcol` | Flat group, one per product | `media_images` |
+| `ProductTag` | `ptag` | Free-form labels, many per product | None |
+| `ProductType` | `ptyp` | One type per product | None |
+
+Categories and collections link to Mercur's media module through `media_images` for gallery and icon images. A category also links to stores through `category_seller` and to product attributes through `product_category_attribute`. See the [links reference](/platform/catalog/reference/links).
+
+## One category per product
+
+Medusa lets a product belong to several categories. Mercur's `assignProductsToCategoryWorkflow` keeps one category per product: adding a product to a category replaces the categories it had.
+
+```ts
+import { assignProductsToCategoryWorkflow } from "@mercurjs/core/workflows"
+
+await assignProductsToCategoryWorkflow(container).run({
+  input: { id: "pcat_01JD8Q1234567", add: ["prod_01JD8Q1234567"] },
+})
+```
+
+The product now belongs only to `pcat_01JD8Q1234567`. Passing a product id in `remove` clears all its categories, not only this one.
+
+## Related
+
+- [Attributes](/platform/attribute/overview) for attribute types and variant axes
+- [Data models](/platform/catalog/reference/data-models) for every field on these models
+- [Offers](/platform/offer/overview) for price and stock per store

@@ -1,0 +1,89 @@
+import { ColumnDef } from "@tanstack/react-table"
+import { HttpTypes } from "@medusajs/types"
+import { useCan, useExtendableTable } from "@mercurjs/dashboard-shared"
+import { useMemo } from "react"
+import { useTranslation } from "react-i18next"
+
+import { _DataTable } from "@components/table/data-table"
+import { useStockLocations } from "@hooks/api"
+import { useReservationItems } from "@hooks/api/reservations"
+import { useDataTable } from "@hooks/use-data-table"
+import {
+  ExtendedReservationItem,
+  useReservationTableColumn,
+} from "./use-reservation-list-table-columns"
+import { useReservationsTableQuery } from "./use-reservation-list-table-query"
+
+const PAGE_SIZE = 20
+
+export const ReservationItemTable = ({
+  inventoryItem,
+}: {
+  inventoryItem: HttpTypes.AdminInventoryItemResponse["inventory_item"]
+}) => {
+  const { t } = useTranslation()
+  const { searchParams, raw } = useReservationsTableQuery({
+    pageSize: PAGE_SIZE,
+  })
+
+  const { reservations, count, isPending } = useReservationItems({
+    ...searchParams,
+    fields: "+line_item.order_id",
+    inventory_item_id: [inventoryItem.id],
+  })
+
+  const canViewLocations = useCan("stock_locations")
+
+  const { stock_locations } = useStockLocations(
+    {
+      id: (reservations || []).map((r) => r.location_id),
+    },
+    { enabled: canViewLocations }
+  )
+
+  const data = useMemo<ExtendedReservationItem[]>(() => {
+    const locationMap = new Map((stock_locations || []).map((l) => [l.id, l]))
+
+    return (reservations || []).map((r) => ({
+      ...r,
+      location: locationMap.get(r.location_id),
+    }))
+  }, [reservations, stock_locations])
+
+  const baseColumns = useReservationTableColumn({ sku: inventoryItem.sku! })
+  const actionsColumn = baseColumns[baseColumns.length - 1]
+  const { columns: extended } = useExtendableTable<ExtendedReservationItem>({
+    model: "reservation",
+    zone: "inventory-item",
+    columns: baseColumns.slice(0, -1) as unknown as ColumnDef<ExtendedReservationItem, unknown>[],
+  })
+  const columns = useMemo(
+    () => [...extended, actionsColumn] as ColumnDef<ExtendedReservationItem, unknown>[],
+    [extended, actionsColumn],
+  )
+
+  const { table } = useDataTable({
+    data: data ?? [],
+    columns,
+    count,
+    enablePagination: true,
+    getRowId: (row: ExtendedReservationItem) => row.id,
+    pageSize: PAGE_SIZE,
+  })
+
+  return (
+    <_DataTable
+      table={table}
+      columns={columns}
+      pageSize={PAGE_SIZE}
+      count={count}
+      isLoading={isPending}
+      pagination
+      queryObject={raw}
+      noRecords={{
+        title: t("inventory.reservations.noRecordsTitle"),
+        message: t("inventory.reservations.noRecordsMessage"),
+      }}
+    />
+  )
+}

@@ -1,0 +1,123 @@
+---
+title: "Seller module service"
+sidebarTitle: "Service"
+description: "Resolve the Seller module service, and the generated and custom methods it exposes for direct reads and writes."
+---
+
+The Seller module service reads and writes the module’s records directly, without a workflow. Use it for reads in subscribers, scheduled jobs, and custom steps. Its writes don’t emit events, run hooks, or roll back, so prefer the [workflows](/platform/store/reference/workflows) for changes.
+
+## Resolve the service
+
+Resolve the service from the Medusa container with the `MercurModules.SELLER` key from `@mercurjs/types`.
+
+```ts
+import { MercurModules, SellerStatus } from "@mercurjs/types"
+
+const sellerService = container.resolve(MercurModules.SELLER)
+
+const [sellers, count] = await sellerService.listAndCountSellers(
+  { status: SellerStatus.OPEN, is_premium: true },
+  { take: 20, order: { created_at: "DESC" } }
+)
+```
+
+This lists the 20 newest open premium stores and the total count of matches.
+
+## Generated methods
+
+The service extends Medusa’s `MedusaService`, which generates the same eight methods for every model. For `Seller` they are:
+
+| Method | Description |
+| --- | --- |
+| `retrieveSeller(id, config?)` | Retrieve one store by id |
+| `listSellers(filters?, config?)` | List stores that match filters |
+| `listAndCountSellers(filters?, config?)` | List stores and return the total count |
+| `createSellers(data)` | Create one store or an array of stores |
+| `updateSellers(data)` | Update one store or an array of stores by id |
+| `deleteSellers(ids)` | Hard delete stores |
+| `softDeleteSellers(ids)` | Soft delete stores |
+| `restoreSellers(ids)` | Restore soft deleted stores |
+
+Each model gets the same set under its own name:
+
+| Model | Method names |
+| --- | --- |
+| `Member` | `retrieveMember`, `listMembers`, `createMembers`, `updateMembers`, … |
+| `SellerMember` | `retrieveSellerMember`, `listSellerMembers`, `createSellerMembers`, … |
+| `MemberInvite` | `retrieveMemberInvite`, `listMemberInvites`, `deleteMemberInvites`, … |
+| `SellerAddress` | `listSellerAddresses`, `createSellerAddresses`, `updateSellerAddresses`, … |
+| `ProfessionalDetails` | `listProfessionalDetails`, `createProfessionalDetails`, … |
+| `PaymentDetails` | `listPaymentDetails`, `createPaymentDetails`, `updatePaymentDetails`, … |
+| `OrderGroup` | `retrieveOrderGroup`, `listOrderGroups`, `listAndCountOrderGroups`, … |
+
+## Custom methods
+
+The service overrides some generated methods and adds a few of its own.
+
+### createSellers and updateSellers
+
+```ts
+createSellers(
+  data: CreateSellerDTO | CreateSellerDTO[]
+): Promise<SellerDTO | SellerDTO[]>
+
+updateSellers(
+  data: UpdateSellerDTO | UpdateSellerDTO[]
+): Promise<SellerDTO | SellerDTO[]>
+```
+
+Both validate `handle` and throw `INVALID_DATA` when it isn’t URL safe. When `handle` is missing and `name` is present, both set the handle from the name.
+
+### upsertMembers
+
+```ts
+upsertMembers(
+  data: {
+    email: string
+    first_name?: string | null
+    last_name?: string | null
+  }[]
+): Promise<MemberDTO[]>
+```
+
+Matches members by `email` and creates the missing ones. For existing members, it fills `first_name` and `last_name` only when they’re empty. It returns the members in input order.
+
+### createMemberInvites
+
+```ts
+createMemberInvites(
+  data: CreateMemberInviteDTO | CreateMemberInviteDTO[]
+): Promise<MemberInviteDTO | MemberInviteDTO[]>
+```
+
+Throws `INVALID_DATA` if an email already belongs to the target store. For each invite, it signs a JWT with the module’s `jwt_secret`, stores it in `token`, and sets `expires_at` from `invite_valid_duration`.
+
+### validateMemberInviteToken
+
+```ts
+validateMemberInviteToken(token: string): Promise<MemberInviteDTO>
+```
+
+Verifies the token’s signature and returns its invite. Throws `INVALID_DATA` for a bad signature, and `NOT_ALLOWED` when the invite is accepted or expired.
+
+### getStatistics
+
+```ts
+getStatistics(): Promise<SellerStatisticsOutput>
+```
+
+Counts stores by status and returns `{ total, premium, by_status }`, where `by_status` has a key for every `SellerStatus` value.
+
+### Order group reads
+
+`listOrderGroups`, `listAndCountOrderGroups`, and `retrieveOrderGroup` go through a custom repository that computes `seller_count` and `total`. See the [order group service](/platform/order-group/reference/service).
+
+## Module options
+
+The service reads these options from its module registration, typed by `SellerModuleOptions`:
+
+| Option | Default | Description |
+| --- | --- | --- |
+| `invite_valid_duration` | `604800` | Invite lifetime in seconds, 7 days |
+| `jwt_secret` | `projectConfig.http.jwtSecret` | Secret used to sign and verify invite tokens |
+| `vendor_url` | `MERCUR_VENDOR_URL`, or `""` | Base URL of the Vendor panel |

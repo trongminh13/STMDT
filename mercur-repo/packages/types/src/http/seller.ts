@@ -1,0 +1,96 @@
+import { DeleteResponse, PaginatedResponse } from "@medusajs/types"
+import {
+  MemberInviteDTO,
+  SellerDTO,
+  SellerMemberDTO,
+  SellerStatisticsOutput,
+} from "../seller"
+import { PermissionMap } from "../permissions"
+
+export interface VendorSellerResponse {
+  /**
+   * The seller's details.
+   */
+  seller: SellerDTO
+}
+
+export interface VendorSellerHandleAvailabilityResponse {
+  /**
+   * The handle that was checked.
+   */
+  handle: string
+  /**
+   * Whether a new seller can use the handle.
+   */
+  available: boolean
+  /**
+   * Why the handle can't be used.
+   */
+  reason?: "invalid" | "taken"
+}
+
+export type VendorSellerListResponse = PaginatedResponse<{
+  /**
+   * The list of sellers.
+   */
+  sellers: SellerDTO[]
+}>
+
+export interface VendorSellerMemberResponse {
+  /**
+   * The seller member's details.
+   */
+  seller_member: SellerMemberDTO & { permissions?: PermissionMap }
+}
+
+export type VendorSellerMemberListResponse = PaginatedResponse<{
+  /**
+   * The list of seller members.
+   */
+  seller_members: SellerMemberDTO[]
+}>
+
+export type VendorMemberInviteListResponse = PaginatedResponse<{
+  /**
+   * The list of member invites.
+   */
+  member_invites: MemberInviteDTO[]
+}>
+
+export type VendorSellerDeleteResponse = DeleteResponse<"seller">
+
+export interface StoreSellerResponse {
+  /**
+   * The seller's details.
+   */
+  seller: SellerDTO
+}
+
+export type StoreSellerListResponse = PaginatedResponse<{
+  /**
+   * The list of sellers.
+   */
+  sellers: SellerDTO[]
+}>
+
+export interface AdminSellerResponse {
+  seller: SellerDTO
+}
+
+export type AdminSellerListResponse = PaginatedResponse<{
+  sellers: SellerDTO[]
+}>
+
+export interface AdminSellerStatisticsResponse {
+  statistics: SellerStatisticsOutput
+}
+
+export interface AdminSellerRegionsBatchResponse {
+  id: string
+  object: "seller"
+}
+
+export interface AdminRegionSellersBatchResponse {
+  id: string
+  object: "region"
+}

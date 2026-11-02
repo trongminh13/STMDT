@@ -1,0 +1,101 @@
+---
+title: "Review links"
+sidebarTitle: "Links"
+description: "The four module links that connect reviews to products, sellers, orders, and customers."
+---
+
+A review stores no foreign keys. Four module links in `packages/core/src/links/` connect it to the records around it, and `query.graph` follows them by alias. Every link is a list link on the other module’s side: one product, seller, order, or customer has many reviews, and each review has one of each it’s linked to.
+
+```ts
+const { data: reviews } = await query.graph({
+  entity: "review",
+  fields: ["id", "rating", "product.title", "seller.name", "order.id"],
+  filters: { status: "published" },
+})
+```
+
+This loads published reviews with their target and order. Only one of `product` and `seller` is set on each review.
+
+## Product and review
+
+Connects a master product to its product reviews. Written by `createReviewWorkflow` through the `create-remote-links` step when `reference` is `product`.
+
+| Property | Value |
+| --- | --- |
+| File | `product-review.ts` |
+| Sides | `Modules.PRODUCT` `product` and `MercurModules.REVIEW` `review` |
+| Cardinality | One product, many reviews |
+| Link table | `product_product_review_review` |
+| Aliases | `review.product`, `product.reviews` |
+
+```ts
+const { data: [product] } = await query.graph({
+  entity: "product",
+  fields: ["title", "reviews.rating", "reviews.status"],
+  filters: { id: "prod_01JD8Q1234567" },
+})
+```
+
+## Seller and review
+
+Connects a seller to its store reviews. Written by `createReviewWorkflow` through the `create-remote-links` step when `reference` is `seller`. The Vendor API scopes reviews to a store through this link.
+
+| Property | Value |
+| --- | --- |
+| File | `seller-review.ts` |
+| Sides | `MercurModules.SELLER` `seller` and `MercurModules.REVIEW` `review` |
+| Cardinality | One seller, many reviews |
+| Link table | `seller_seller_review_review` |
+| Aliases | `review.seller`, `seller.reviews` |
+
+```ts
+const { data: [seller] } = await query.graph({
+  entity: "seller",
+  fields: ["name", "reviews.rating", "reviews.seller_note"],
+  filters: { id: "sel_01JD8Q1234567" },
+})
+```
+
+## Order and review
+
+Connects a review to the order that earned it. Written for every review by the `create-review` step. `createReviewWorkflow` reads it to reject a second review of the same target from one order.
+
+| Property | Value |
+| --- | --- |
+| File | `order-review.ts` |
+| Sides | `Modules.ORDER` `order` and `MercurModules.REVIEW` `review` |
+| Cardinality | One order, many reviews |
+| Link table | `order_order_review_review` |
+| Aliases | `review.order`, `order.reviews` |
+
+```ts
+const { data: [order] } = await query.graph({
+  entity: "order",
+  fields: ["display_id", "reviews.reference", "reviews.rating"],
+  filters: { id: "order_01JD8Q1234567" },
+})
+```
+
+## Customer and review
+
+Connects a review to the customer who wrote it. Written for every review by the `create-review` step. The Store API limits a customer to their own reviews through this link.
+
+| Property | Value |
+| --- | --- |
+| File | `customer-review.ts` |
+| Sides | `Modules.CUSTOMER` `customer` and `MercurModules.REVIEW` `review` |
+| Cardinality | One customer, many reviews |
+| Link table | `customer_customer_review_review` |
+| Aliases | `review.customer`, `customer.reviews` |
+
+```ts
+const { data: [customer] } = await query.graph({
+  entity: "customer",
+  fields: ["email", "reviews.id", "reviews.status"],
+  filters: { id: "cus_01JD8Q1234567" },
+})
+```
+
+<Note>
+  `deleteReviewWorkflow` soft deletes the review but keeps all of its link rows. The service’s rating helpers join through the product and seller link tables, so they still count a soft deleted review.
+</Note>

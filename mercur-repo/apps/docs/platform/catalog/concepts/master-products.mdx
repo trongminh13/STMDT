@@ -1,0 +1,56 @@
+---
+title: "Master products in a shared catalog"
+sidebarTitle: "Master products"
+description: "Why products belong to the marketplace catalog instead of a store, and how Mercur records who submitted each one."
+---
+
+A master product is the one catalog record for an item that any number of stores can sell. Mercur keeps products out of store ownership so that two stores selling the same chair share one title, one set of variants, and one product page, and compete on their offers instead.
+
+## One product, sold through offers
+
+A master product is Medusa's native `Product` model (table `product`, id prefix `prod`). It holds the shared catalog data: `title`, `handle`, `description`, `status`, images, options, variants, and categories. It has no seller column. Creating a product adds it to the catalog, and stores then sell it by creating [offers](/platform/offer/overview) against its variants.
+
+The split between the two records works like this:
+
+- **Master product**: what the item is, shared by every store that sells it
+- **Offer**: how one store sells it, with the store's own SKU, price, stock, and shipping profile
+
+A store's stock and price never live on the variant. Offer inventory links to the offer, so a variant's `inventory_items` stay empty for marketplace sales.
+
+## Attribution instead of ownership
+
+Mercur records who submitted a product without making them its owner. `createProductsWorkflow` takes a required `created_by` and writes a confirmed `ProductChange` with that value as `created_by`, holding one `PRODUCT_ADD` action. The action's `details` store the starting `status` and the ids of the attributes the product began with.
+
+The vendor API passes the store's seller id as `created_by`, and the admin API passes the operator's user id. Mercur reads that record back to decide which products a store submitted:
+
+```ts
+const { data: actions } = await query.graph({
+  entity: "product_change_action",
+  fields: ["product_id"],
+  filters: {
+    action: "PRODUCT_ADD",
+    product_change: { created_by: "sel_01JD8Q1234567" },
+  },
+})
+```
+
+The query returns the ids of every product the store submitted. Mercur runs the same lookup to let a store see its own `draft` and `proposed` submissions, which other stores never see.
+
+<Note>
+  Attribution grants visibility, not control of the catalog entry. Every edit a store makes through the vendor API, to its own submission or to a published product, goes through the [product edit pipeline](/platform/product-edit/overview).
+</Note>
+
+## What a store sees
+
+The vendor API filters product reads by status, attribution, and the [allowlist](/platform/catalog/concepts/product-seller-allowlist). A store's product list contains:
+
+- **Its own submissions**: products it created that are `draft` or `proposed`
+- **Published products open to it**: `published` products whose allowlist is empty or includes the store
+
+A store can still read one of its own `rejected` products by id, but rejected products drop out of its list. The Store API returns `published` products only.
+
+## Related
+
+- [Status lifecycle](/platform/catalog/concepts/status-lifecycle) for how a submission becomes a published product
+- [Create a master product](/platform/catalog/guides/create-a-master-product) to run the create workflow from your code
+- [Offers](/platform/offer/overview) for how stores sell a master product

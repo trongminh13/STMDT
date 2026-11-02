@@ -1,0 +1,86 @@
+---
+title: "Offer data models"
+sidebarTitle: "Data models"
+description: "Every field of the Offer and OfferCondition data models in the Offer module."
+---
+
+The Offer module owns two data models: `Offer` and `OfferCondition`. Prices, inventory, the store, and catalog records aren’t columns on these models. They attach through [module links](/platform/offer/reference/links).
+
+## Offer
+
+A store’s listing of one master product variant. Table `offer`, id prefix `offer`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `text` | Primary key, prefixed `offer_` |
+| `seller_id` | `text` | The store that owns the offer |
+| `variant_id` | `text` | The master `ProductVariant` the offer sells |
+| `product_id` | `text` | The master `Product`, read from the variant on create |
+| `shipping_profile_id` | `text` | The store’s shipping profile for this offer |
+| `sku` | `text` | Searchable. Unique per store among live offers |
+| `ean` | `text \| null` | Searchable. Copied from the variant when omitted on create |
+| `upc` | `text \| null` | Searchable. Copied from the variant when omitted on create |
+| `manage_inventory` | `boolean` | Default `true`. Whether stock is checked for the offer |
+| `allow_backorder` | `boolean` | Default `false`. Whether the offer sells past its stock |
+| `leadtime_to_ship` | `number \| null` | Lead time before the offer ships |
+| `created_by` | `text` | The member who created the offer |
+| `condition_id` | `text \| null` | Foreign key to `OfferCondition` |
+| `variant_count` | `number` | Computed, not stored. Set only by `group_by_seller` reads |
+| `metadata` | `json \| null` | Custom key-value data |
+| `created_at` | `timestamp` | Set on create |
+| `updated_at` | `timestamp` | Set on every write |
+| `deleted_at` | `timestamp \| null` | Set when the offer is soft-deleted |
+
+`OfferDTO` also has `offer_ids`, the list of offer ids in a `group_by_seller` group. It isn’t a model field.
+
+### Offer relations
+
+The offer has one relation inside the module:
+
+- **`condition`**: belongs to one `OfferCondition`, nullable
+
+### Offer indexes
+
+Every index applies only to rows where `deleted_at IS NULL`:
+
+| Index | Columns | Notes |
+| --- | --- | --- |
+| `IDX_offer_seller_sku_unique` | `seller_id`, `sku` | Unique |
+| `IDX_offer_variant_id` | `variant_id` | |
+| `IDX_offer_product_id` | `product_id` | |
+| `IDX_offer_seller_id` | `seller_id` | |
+| `IDX_offer_shipping_profile_id` | `shipping_profile_id` | |
+| `IDX_offer_ean` | `ean` | Only where `ean IS NOT NULL` |
+| `IDX_offer_upc` | `upc` | Only where `upc IS NOT NULL` |
+| `IDX_offer_condition_id` | `condition_id` | Only where `condition_id IS NOT NULL` |
+| `IDX_offer_seller_id_created_at` | `seller_id`, `created_at` | |
+| `IDX_offer_product_id_seller_id_created_at` | `product_id`, `seller_id`, `created_at` | |
+
+## OfferCondition
+
+A physical condition an offer can be listed under, such as `new` or `refurbished`. Operators manage the list. Id prefix `ofcond`.
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `id` | `text` | Primary key, prefixed `ofcond_` |
+| `code` | `text` | Searchable. Unique among live conditions |
+| `label` | `text` | Searchable. Display name |
+| `is_active` | `boolean` | Default `true`. Inactive conditions can’t be assigned |
+| `rank` | `number` | Default `0`. Sort order of the list |
+| `metadata` | `json \| null` | Custom key-value data |
+| `created_at` | `timestamp` | Set on create |
+| `updated_at` | `timestamp` | Set on every write |
+| `deleted_at` | `timestamp \| null` | Set when the condition is soft-deleted |
+
+### OfferCondition relations
+
+The condition has one relation inside the module:
+
+- **`offers`**: has many `Offer` records, mapped by `condition`
+
+The index `IDX_offer_condition_code_unique` keeps `code` unique while `deleted_at IS NULL`.
+
+## Related
+
+- [Links to other modules](/platform/offer/reference/links)
+- [What is an offer](/platform/offer/concepts/what-is-an-offer)

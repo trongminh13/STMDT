@@ -1,0 +1,65 @@
+---
+title: "How reviews are moderated and rated"
+sidebarTitle: "Ratings & moderation"
+description: "The review status values, who can change them, how a store answers, and how average ratings are computed."
+---
+
+A review reaches shoppers only after an operator approves it, and a store can add one public answer. Moderation is a change to the review’s `status` field, an answer is a write to its `seller_note`, and removal is a soft delete. Average ratings aren’t stored anywhere: the Review module service computes them from the review rows each time you ask.
+
+## Status values
+
+A review’s `status` holds one of three values. Every review starts as `pending`, and only `updateReviewWorkflow` changes it.
+
+| Status | Meaning |
+| --- | --- |
+| `pending` | Submitted and waiting for an operator. The default |
+| `published` | Approved for display |
+| `rejected` | Declined by an operator |
+
+<img className="block dark:hidden" src="/images/figures/review-moderation-light.svg" alt="Behind, a review record. In front, the changes each workflow makes: updateReviewWorkflow moves status between pending, published, and rejected in any direction, respondReviewWorkflow sets seller_note once, and deleteReviewWorkflow sets deleted_at." />
+<img className="hidden dark:block" src="/images/figures/review-moderation-dark.svg" alt="Behind, a review record. In front, the changes each workflow makes: updateReviewWorkflow moves status between pending, published, and rejected in any direction, respondReviewWorkflow sets seller_note once, and deleteReviewWorkflow sets deleted_at." />
+
+The workflow enforces no order between statuses. An operator can publish a rejected review or move a published one back to `pending`. Who can set the status depends on the API:
+
+- **Admin API**: `POST /admin/reviews/:id` sets `status`, `rating`, and `customer_note`
+- **Vendor API**: a store can’t change `status` or `rating`; the respond route ignores both fields
+- **Store API**: a customer can edit `rating` and `customer_note`, but not `status`
+
+<Warning>
+  A customer edit doesn’t reset a published review to `pending`. If edited reviews should go back through moderation, wrap the Store route or `updateReviewWorkflow` and set the status yourself.
+</Warning>
+
+## Store answers
+
+A store answers a review by writing `seller_note` through `respondReviewWorkflow`. The workflow refuses a second answer: it fails when `seller_note` is already set, so the first answer stays until someone clears it with `updateReviewWorkflow`. Answering never touches `status`, so a store can answer a `pending` review before it’s published.
+
+Over HTTP, a store answers with `POST /vendor/reviews/:id`, which only accepts reviews linked to that store, so only seller reviews. An operator answers any review with `POST /admin/reviews/:id/respond`.
+
+## Deletion is soft
+
+`deleteReviewWorkflow` soft deletes the review: it sets `deleted_at` and keeps the row and its links. `query.graph` and the APIs stop returning it, and the workflow restores it if a later step fails. Operators delete with `DELETE /admin/reviews/:id`, and customers delete their own reviews with `DELETE /store/reviews/:id`.
+
+## Average ratings are computed on read
+
+The service’s rating helpers run an `AVG(rating)` query over the review table, joined through the product or seller link table. There’s no stored average to keep in sync. The helpers apply no filters beyond the target, which affects what counts:
+
+- **Every status counts**: `pending` and `rejected` reviews are part of the average
+- **Soft deleted reviews count**: the query doesn’t check `deleted_at`, and the link rows stay in place
+- **No reviews**: `getAvgRating` returns `null`
+
+```ts
+const reviewService = container.resolve(MercurModules.REVIEW)
+
+const average = await reviewService.getAvgRating(
+  "seller",
+  "sel_01JD8Q1234567"
+)
+```
+
+This returns the store’s average as a numeric string, such as `"4.5000000000000000"`, or `null`. When only published reviews should count, compute the average from `query.graph` results instead, as shown in [Compute aggregate ratings](/platform/review/guides/compute-aggregate-ratings).
+
+## Related
+
+- [Moderate a review from server code](/platform/review/guides/moderate-a-review)
+- [Respond to a review](/platform/review/guides/respond-to-a-review)
+- [Rating helper signatures](/platform/review/reference/service)

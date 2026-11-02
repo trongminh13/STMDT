@@ -1,0 +1,47 @@
+---
+title: "How an offer ships"
+sidebarTitle: "Shipping"
+description: "Each offer names its store's shipping profile, and Mercur links the master product to a profile so multi-store carts keep their shipping methods."
+---
+
+Every offer ships with a shipping profile that belongs to its store. The profile ties the offer’s items to that store’s shipping options, so in a cart with items from several stores, each store ships its own items at its own rates.
+
+## The offer’s shipping profile
+
+An offer stores its profile in `shipping_profile_id`, a required field on the `Offer` row. A read-only link on that field exposes the profile as `offer.shipping_profile` in `query.graph`.
+
+You set the profile when you create the offer and can change it with `updateOffersWorkflow`:
+
+```ts
+await updateOffersWorkflow(container).run({
+  input: {
+    offers: [
+      { id: "offer_01JD8Q1234567", shipping_profile_id: "sp_01JD8Q1234567" },
+    ],
+  },
+})
+```
+
+This run moves one offer to a different profile and emits `offer.updated`. The offer workflows don’t check that the profile belongs to the offer’s store, so validate that in your route when the input comes from a seller.
+
+## Shipping profiles on master products
+
+Master products don’t carry a shipping profile of their own, but Medusa’s cart refresh keeps a shipping method only when a product in the cart matches the option’s profile. Without a profile on the product, multi-store carts would lose their shipping methods on every refresh.
+
+`createOffersWorkflow` closes that gap. For each master product in the run, it links the product to the offer’s shipping profile when the product has no profile yet:
+
+- **Product without a profile**: the first offer in the run sets it
+- **Product that already has a profile**: the link is skipped, even when another store’s offer names a different profile
+- **Several offers on one product in one run**: only the first offer’s profile is linked
+
+<Note>
+  The product to profile link is one-to-one and exists only for the cart refresh. Each offer’s own `shipping_profile_id` is still what decides how that store ships.
+</Note>
+
+`updateOffersWorkflow` doesn’t touch the product link, so changing an offer’s profile later leaves the product’s profile as it was.
+
+## Related
+
+- [What is an offer](/platform/offer/concepts/what-is-an-offer)
+- [The offer to shipping profile link](/platform/offer/reference/links)
+- [Create an offer](/platform/offer/guides/create-an-offer)

@@ -1,0 +1,52 @@
+---
+title: "Commission events"
+sidebarTitle: "Events"
+description: "Commission emits no domain events of its own. It listens to four order events and recomputes commission lines."
+---
+
+The Commission module doesn’t define or emit domain events. Commission lines are derived from the order, so the module listens to order events instead and recomputes the lines when the order’s contents change.
+
+## Events that trigger a recompute
+
+The `order-commission-refresh-handler` subscriber, in `packages/core/src/subscribers/order-edit-confirmed.ts`, runs `refreshOrderCommissionLinesWorkflow` for the order on each of these events.
+
+| Event | Emitted when | Payload the subscriber reads |
+| --- | --- | --- |
+| `order-edit.confirmed` | An order edit is confirmed | `order_id` |
+| `order.return_received` | A return is received | `order_id` |
+| `order.claim_created` | A claim is created | `order_id` |
+| `order.exchange_created` | An exchange is created | `order_id` |
+
+The subscriber reads `order_id` and falls back to `id`. It does nothing when the payload has neither. The events come from Medusa as `OrderEditWorkflowEvents.CONFIRMED`, `OrderWorkflowEvents.RETURN_RECEIVED`, `OrderWorkflowEvents.CLAIM_CREATED`, and `OrderWorkflowEvents.EXCHANGE_CREATED`.
+
+Checkout doesn’t go through an event. `completeCartWithSplitOrdersWorkflow` runs the refresh as a nested step for every seller order it creates.
+
+## Run your own logic after a recompute
+
+Subscribe to the same order events to run your own logic when an order’s commission may change.
+
+```ts title="src/subscribers/commission-audit.ts"
+import type { SubscriberArgs, SubscriberConfig } from "@medusajs/framework"
+import { OrderWorkflowEvents } from "@medusajs/framework/utils"
+
+export default async function commissionAudit({
+  event,
+  container,
+}: SubscriberArgs<{ order_id: string }>) {
+  const logger = container.resolve("logger")
+  logger.info(`Commission may have changed on ${event.data.order_id}`)
+}
+
+export const config: SubscriberConfig = {
+  event: [
+    OrderWorkflowEvents.RETURN_RECEIVED,
+    OrderWorkflowEvents.CLAIM_CREATED,
+  ],
+}
+```
+
+Subscribers run independently, so this one can run before the refresh finishes. When you need the new lines, use the `commissionLinesUpserted` hook of `refreshOrderCommissionLinesWorkflow`, which runs after they’re written. See [Refresh order commission lines](/platform/commission/guides/refresh-order-commission-lines).
+
+<Note>
+  Like every `MedusaService` module, the Commission service also emits Medusa’s internal data-mutation events when records are created, updated, or deleted. Mercur doesn’t subscribe to them, and this reference doesn’t treat them as a stable contract.
+</Note>

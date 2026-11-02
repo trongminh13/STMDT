@@ -1,0 +1,47 @@
+---
+title: "Product Edit links"
+sidebarTitle: "Links"
+description: "The read-only link that exposes a product's change history as product.changes."
+---
+
+Mercur modules never import each other. They connect through module links, which you read with `query.graph`. The Product Edit module has one link, to Medusa’s Product module.
+
+## Product to product changes
+
+A read-only link that lists a product’s changes under the `changes` alias. It’s defined in `packages/core/src/links/product-change-link.ts`.
+
+| Side | Module | Linkable | Key |
+| --- | --- | --- | --- |
+| Source | Product (`Modules.PRODUCT`) | `product` | `id` |
+| Target | Product Edit (`MercurModules.PRODUCT_EDIT`) | `product_change` | `product_id` |
+
+- **Cardinality**: one product to many changes
+- **Alias**: `changes`, read as `product.changes`
+- **Storage**: no pivot table. The link reads the `product_id` column on `product_change`
+- **Writes**: none. The link is `readOnly`, so you create changes with the [workflows](/platform/product-edit/reference/workflows), never through the link
+
+Read a product’s history with its actions:
+
+```ts
+const query = container.resolve("query")
+
+const { data: [product] } = await query.graph({
+  entity: "product",
+  fields: [
+    "id",
+    "title",
+    "changes.id",
+    "changes.status",
+    "changes.created_by",
+    "changes.actions.action",
+    "changes.actions.details",
+  ],
+  filters: { id: "prod_01JD8Q1234567" },
+})
+```
+
+`product.changes` returns every change on the product, including audit changes and resolved ones. To filter by status, query the `product_change` entity with a `product_id` filter instead, because `query.graph` can’t filter on linked records.
+
+## Actor fields
+
+`created_by`, `confirmed_by`, `declined_by`, and `canceled_by` hold actor ids as plain text: a seller id when the change came from a vendor route, a user id when it came from an admin route. They aren’t module links, so `query.graph` can’t expand them. Resolve the seller or user yourself when you need their details.

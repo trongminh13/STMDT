@@ -1,0 +1,71 @@
+---
+title: "What a store is made of"
+sidebarTitle: "The store"
+description: "The seller record, its currency and regions, and the satellite records that hold its business details."
+---
+
+A store is the `Seller` record: the account a seller trades under on your marketplace. It holds the public profile customers see, the single currency the store settles in, and its status. Three satellite records carry its business details: an address, professional details, and bank payment details.
+
+## The seller record
+
+The `Seller` data model (table `seller`, id prefix `sel`) is the root of everything a store owns. Offers, orders, payouts, and price lists link to it from their own modules.
+
+A seller has four unique fields besides its id:
+
+- **`name`**: unique among stores that aren’t deleted
+- **`handle`**: unique, URL safe, and generated from `name` when you omit it
+- **`email`**: unique, the store’s contact address
+- **`external_id`**: optional, unique when set, for mapping to an outside system
+
+The service validates `handle` on create and update. A handle with characters that aren’t URL safe fails with an `INVALID_DATA` error.
+
+```ts
+import { createSellersWorkflow } from "@mercurjs/core/workflows"
+
+const { result } = await createSellersWorkflow(container).run({
+  input: {
+    sellers: [
+      {
+        name: "Acme Supplies",
+        email: "team@acme.com",
+        currency_code: "usd",
+        member: { email: "owner@acme.com" },
+      },
+    ],
+  },
+})
+```
+
+This creates a store with the handle `acme-supplies` and the status `pending_approval`. It also invites `owner@acme.com` to join the team as an administrator.
+
+## Currency and regions
+
+A store settles in one currency, set by `currency_code` when you create it. `UpdateSellerDTO` has no `currency_code` field, so the currency stays fixed for the life of the store. The vendor request context carries it as `seller_context.currency_code`.
+
+A store also links to one or more regions through the `region_seller` link:
+
+- **On create**: the store links to the default region of your Medusa store, plus any `region_ids` you pass
+- **On change**: `linkSellerRegionsWorkflow` adds and removes region links in one call
+- **Rule**: a store must keep at least one region, so removing the last one fails
+
+## Business details
+
+Three one-to-one records hang off the seller. Each workflow that writes them creates the record when it’s missing and updates it otherwise.
+
+| Model | Holds | Written by |
+| --- | --- | --- |
+| `SellerAddress` | The store’s postal address and contact name | `updateSellerAddressWorkflow` |
+| `ProfessionalDetails` | Corporate name, registration number, tax id | `updateSellerProfessionalDetailsWorkflow` |
+| `PaymentDetails` | Bank account holder, IBAN, BIC, routing and account numbers | `updateSellerPaymentDetailsWorkflow` |
+
+You remove professional details with `deleteSellerProfessionalDetailsWorkflow`. Deleting a seller cascades to all three records and to its pending invites, and detaches its members without deleting them.
+
+## Fulfillment defaults
+
+`default_leadtime_to_ship` holds the number of days a store needs before it ships, and defaults to `2`. Vendors can change it on their own store.
+
+## Related
+
+- [Team & members](/platform/store/concepts/team)
+- [Lifecycle](/platform/store/concepts/lifecycle)
+- [Data models reference](/platform/store/reference/data-models)

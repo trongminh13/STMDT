@@ -1,0 +1,93 @@
+---
+title: "Stores"
+sidebarTitle: "Overview"
+description: "Control who sells on your marketplace, who works on each store, and when a store can trade."
+---
+
+Use Mercur to decide who can sell on your marketplace and what each person on a store’s team can do.
+
+A store is the account a seller trades under. Offers, orders, payouts, and storefront pages all link back to it, and its team works only inside it. The Seller module holds the store record, its business details, its members and invites, and its status. Other marketplace modules attach to a store through module links, never through direct references.
+
+<img className="block dark:hidden" src="/images/figures/store-overview-light.svg" alt="A Stores list from the Seller module showing four stores, each with its status, currency, member count, and premium flag, in front of the Team panel for acme-supplies with three members and their seller roles." />
+<img className="hidden dark:block" src="/images/figures/store-overview-dark.svg" alt="A Stores list from the Seller module showing four stores, each with its status, currency, member count, and premium flag, in front of the Team panel for acme-supplies with three members and their seller roles." />
+
+<Note>
+  The Admin and Vendor panels call it a store. The code calls the same record a `Seller` (id prefix `sel`), and you resolve its module with `MercurModules.SELLER` from `@mercurjs/types`.
+</Note>
+
+## Key features
+
+The Seller module covers the full life of a store account:
+
+- **Many-to-many teams**: a member can belong to several stores and picks the active one per request
+- **Owner protection**: the store’s owner membership can’t be removed or have its role changed
+- **Seller roles**: each membership stores one of five `SellerRole` values, from administration to support
+- **Token-based invites**: signed invite tokens that expire after 7 days by default
+- **Governed lifecycle**: four statuses, each transition run by its own workflow with a hook and an event
+- **Scheduled closures**: a `closed_from` and `closed_to` window that hides a store from the Store API without changing its status
+- **Premium flag**: an `is_premium` boolean the operator sets for featured placement
+- **Region assignment**: every store links to one or more regions, starting with the default region
+
+## How it works
+
+A store moves from creation to trading in a fixed order:
+
+1. A seller registers, or your code runs `createSellersWorkflow`, and the store starts in `pending_approval`
+2. The workflow links the store to the default region and to any `region_ids` you pass
+3. The first member joins as owner, either at registration or by accepting the invite the workflow sends
+4. The operator runs `approveSellerWorkflow`, and the store becomes `open`
+5. The Store API lists the store and its offers while it’s `open` and outside a closure window
+
+## Get started
+
+Learn how stores, teams, and statuses fit together.
+
+<CardGroup cols={2}>
+  <Card title="The store" icon="store" href="/platform/store/concepts/store-entity">
+    The seller record, its currency, regions, and business details.
+  </Card>
+  <Card title="Team & members" icon="users" href="/platform/store/concepts/team">
+    Members, owners, roles, invites, and the active store.
+  </Card>
+  <Card title="Lifecycle" icon="arrows-rotate" href="/platform/store/concepts/lifecycle">
+    Statuses, transitions, scheduled closures, and premium.
+  </Card>
+</CardGroup>
+
+## Examples
+
+Build against stores in your own server code.
+
+<CardGroup cols={2}>
+  <Card title="Create a store" icon="plus" href="/platform/store/guides/create-a-store">
+    Run `createSellersWorkflow` from a route or a seed script.
+  </Card>
+  <Card title="Moderate stores" icon="gavel" href="/platform/store/guides/moderate-a-store">
+    Approve, suspend, terminate, and reinstate stores in code.
+  </Card>
+  <Card title="Manage the team" icon="user-plus" href="/platform/store/guides/manage-the-team">
+    Invite, add, re-role, and remove members.
+  </Card>
+</CardGroup>
+
+## Resources
+
+The data models, links, workflows, service methods, and events behind stores.
+
+<CardGroup cols={2}>
+  <Card title="Data models" icon="table" href="/platform/store/reference/data-models">
+    `Seller`, `Member`, `SellerMember`, `MemberInvite`, and the satellite records.
+  </Card>
+  <Card title="Links" icon="link" href="/platform/store/reference/links">
+    How a store connects to orders, offers, payouts, regions, and more.
+  </Card>
+  <Card title="Workflows" icon="diagram-project" href="/platform/store/reference/workflows">
+    Store, lifecycle, and team workflows with their hooks.
+  </Card>
+  <Card title="Service" icon="gear" href="/platform/store/reference/service">
+    Seller module service methods for direct reads and writes.
+  </Card>
+  <Card title="Events" icon="bell" href="/platform/store/reference/events">
+    Events emitted as stores, members, and invites change.
+  </Card>
+</CardGroup>

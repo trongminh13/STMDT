@@ -1,0 +1,67 @@
+---
+title: "Commission lines on orders"
+sidebarTitle: "Order commission lines"
+description: "What a commission line records, when Mercur writes and rewrites it, and how payouts read it."
+---
+
+A commission line is the resolved commission for one line item or one shipping method of an order. It’s derived data: Mercur computes it from the current rates and the order’s contents, writes it at checkout, and rewrites it whenever the order changes. Payouts read these lines to work out what the seller receives.
+
+## What a line records
+
+A line is a `CommissionLine` record (id prefix `comline`). It points at exactly one of `item_id` or `shipping_method_id`, and it stores the rate it came from and the amount.
+
+```ts
+const line = {
+  id: "comline_01JD8Q1234567",
+  item_id: "ordli_01JD8Q1234567",
+  shipping_method_id: null,
+  commission_rate_id: "comrate_01JD8Q1234567",
+  provider_id: "system",
+  code: "acme-apparel-k3x9qa",
+  rate: 12,
+  amount: 5.64,
+  description: null,
+  data: null,
+}
+```
+
+The fields carry these values from the `system` provider:
+
+- **`code`**: the code of the winning rate, kept so the line stays readable if the rate is renamed or deleted
+- **`rate`**: the percent for a percentage rate, or the fixed amount for a fixed rate
+- **`amount`**: the commission for the line, computed with `MathBN`
+- **`description`**: `Shipping Commission` on shipping lines, empty on item lines
+- **`provider_id`**: the provider that computed the line, `system` by default
+- **`data`**: free JSON a custom provider can fill
+
+## When lines are written
+
+Mercur writes lines at checkout and rewrites them when the order’s contents change. Both paths run `refreshOrderCommissionLinesWorkflow`:
+
+| Trigger | Where it runs |
+| --- | --- |
+| Cart completed | A nested step of `completeCartWithSplitOrdersWorkflow`, for every seller order in the group |
+| `order-edit.confirmed` | The `order-commission-refresh-handler` subscriber |
+| `order.return_received` | The same subscriber |
+| `order.claim_created` | The same subscriber |
+| `order.exchange_created` | The same subscriber |
+
+A refresh resolves against the rates that exist when it runs. Changing a rate doesn’t touch existing lines until the order is refreshed again.
+
+## A refresh replaces, it doesn’t append
+
+Computed lines carry no `id`. The module’s `upsertCommissionLines` first deletes every existing line whose `item_id` or `shipping_method_id` is in the new set, then inserts the new lines in the same transaction. Running a refresh twice leaves one line per item and shipping method.
+
+<Warning>
+  Deletion is keyed on the anchors in the new set. If an item no longer gets a line, for example because you disabled the only rate that matched it, its old line stays in place.
+</Warning>
+
+## How payouts use the lines
+
+`createOrderPayoutsWorkflow` reads every commission line whose `item_id` or `shipping_method_id` belongs to the order. It sums their `amount` and pays the order `total` minus that sum to the seller’s payout account. A refund taken back later is reduced by its share of the same sum. With the lines from the [overview figure](/platform/commission/overview), an order total of € 92.00 and commission of € 10.14 pays the seller € 81.86.
+
+## Related
+
+- [Refresh an order’s lines from your own code](/platform/commission/guides/refresh-order-commission-lines)
+- [The order events that trigger a refresh](/platform/commission/reference/events)
+- [All `CommissionLine` fields](/platform/commission/reference/data-models)
