@@ -8,12 +8,11 @@ To spin up this template locally, follow these steps:
 
 ### Clone
 
-If you've already cloned this repo, skip to [Development](#development).
+If you’ve already cloned this repo, skip to [Development](#development).
 
 ### Development
 
-1. First [clone the repo](#clone) if you have not done so already
-
+1. First clone the repo if you have not done so already
 2. Copy the example environment variables:
 
 ```bash
@@ -21,9 +20,9 @@ cd my-project
 cp packages/api/.env.template packages/api/.env
 ```
 
-3. Update the `.env` file with your database connection string and other required variables:
+3. Update the .env file with your database connection string and other required variables:
 
-```
+```ini
 DATABASE_URL=postgres://user:password@localhost:5432/mercur
 REDIS_URL=redis://localhost:6379
 JWT_SECRET=your-super-secret-jwt-key
@@ -37,25 +36,25 @@ bun install
 bun dev
 ```
 
-5. Open `http://localhost:9000` to access the Medusa backend
-6. Open `http://localhost:7000` to access the admin dashboard
-6. Open `http://localhost:7001` to access the vendor dashboard
+5. Open http://localhost:9000 to access the Medusa backend
+6. Open http://localhost:7000 to access the admin dashboard
+7. Open http://localhost:7001 to access the vendor dashboard
 
-That's it! Follow the on-screen instructions to login and create your first admin user.
+That’s it! Follow the on-screen instructions to login and create your first admin user.
 
-## What's Inside
+## What’s Inside
 
 This monorepo includes the following packages and apps:
 
 ### Apps and Packages
 
-- `packages/api` - The Medusa backend with all marketplace functionality
-- `apps/admin` - Admin dashboard customizations
-- `apps/vendor` - Vendor portal customizations
+*   `packages/api` - The Medusa backend with all marketplace functionality
+*   `apps/admin` - Admin dashboard customizations
+*   `apps/vendor` - Vendor portal customizations
 
 ### Project Structure
 
-```
+```bash
 ├── apps/
 │   ├── admin/          # Admin dashboard extensions
 │   └── vendor/         # Vendor portal extensions
@@ -79,9 +78,9 @@ This monorepo includes the following packages and apps:
 
 This project has some additional tools already setup for you:
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [Turborepo](https://turborepo.dev/) for monorepo management
-- [Prettier](https://prettier.io) for code formatting
+*   [TypeScript](https://www.typescriptlang.org/) for static type checking
+*   [Turborepo](https://turborepo.dev/) for monorepo management
+*   [Prettier](https://prettier.io) for code formatting
 
 ## How It Works
 
@@ -137,11 +136,31 @@ bun run build
 
 This project bundles its documentation as a dependency (`@mercurjs/docs`), so AI agents can read it offline and version-matched to your installed packages. Point your agent at:
 
-- `node_modules/@mercurjs/docs/llms.txt` — an index of every page
-- `node_modules/@mercurjs/docs/content/**/*.mdx` — the full pages
+*   `node_modules/@mercurjs/docs/llms.txt` — an index of every page
+*   `node_modules/@mercurjs/docs/content/**/*.mdx` — the full pages
 
 `CLAUDE.md` and `AGENTS.md` instruct agents to read these before making changes. The same docs are online at [docs.mercurjs.com](https://docs.mercurjs.com).
 
 ## Questions
 
 If you have any issues or questions start a [GitHub discussion](https://github.com/mercurjs/mercur/discussions).
+
+#### 1\. Đăng nhập trang Quản trị Sàn (Admin)
+
+*   **URL:** [http://localhost:9000/dashboard](http://localhost:9000/dashboard)
+*   **Email:** `admin@daiviet.edu.vn`
+*   **Mật khẩu:** `AdminPassword123!`
+
+ *
+
+#### 2\. Đăng nhập trang Người bán / Creator (Vendor)
+
+*   **URL:** [http://localhost:9000/seller](http://localhost:9000/seller)
+*   **Tài khoản chính:**
+    *   **Email:** `creator.ai@daiviet.edu.vn`
+    *   **Mật khẩu:** `CreatorPassword123!`
+*   **Tài khoản demo mẫu (nếu muốn xem gian hàng mẫu có sẵn sản phẩm giày/thời trang):**
+    *   **Email:** `seller@mercur.dev`
+    *   **Mật khẩu:** `supersecret`
+
+<br>
