@@ -40,7 +40,8 @@
     "@mercurjs/core": "2.3.7",
     "@mercurjs/types": "2.3.7",
     "http-proxy-middleware": "3.0.7",
-    "@mercurjs/cli": "2.3.7"
+    "@mercurjs/cli": "2.3.7",
+    "ioredis": "5.11.1"
   },
   "devDependencies": {
     "@acme/admin": "*",

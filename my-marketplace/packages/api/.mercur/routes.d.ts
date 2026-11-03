@@ -594,6 +594,7 @@ export type Routes = {
                     decline: typeof import("@medusajs/medusa/api/store/orders/[id]/transfer/decline/route");
                     request: typeof import("@medusajs/medusa/api/store/orders/[id]/transfer/request/route");
                 };
+                digitalAssets: typeof import("../src/api/store/orders/[id]/digital-assets/route");
             };
         };
         paymentCollections: typeof import("@medusajs/medusa/api/store/payment-collections/route") & {

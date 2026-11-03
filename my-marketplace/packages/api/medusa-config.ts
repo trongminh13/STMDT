@@ -47,6 +47,9 @@ module.exports = withMercur({
       }
     },
     {
+      resolve: './src/modules/digital-asset',
+    },
+    {
       resolve: '@medusajs/medusa/file',
       options: {
         providers: [
