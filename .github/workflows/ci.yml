@@ -1,0 +1,161 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Code Quality (Lint)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock', '**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install Monorepo Dependencies
+        run: |
+          cd my-marketplace
+          bun install --frozen-lockfile || bun install
+
+      - name: Run ESLint
+        run: |
+          cd my-marketplace
+          bun run lint
+
+  typecheck:
+    name: Static Type Checking (TypeScript)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lock', '**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
+      - name: Install Dependencies
+        run: |
+          cd my-marketplace
+          bun install --frozen-lockfile || bun install
+
+      - name: Typecheck Backend API
+        run: |
+          cd my-marketplace/packages/api
+          bunx tsc --noEmit
+
+      - name: Run PayOS Webhook & Download Limit Test Suites
+        run: |
+          cd my-marketplace/packages/api
+          bun run src/scripts/test-payos-webhook.ts
+          bun run src/scripts/test-download-limit.ts
+
+  e2e-flow:
+    name: E2E Flow Test (POC Hàng Số AI)
+    needs: [lint, typecheck]
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install Python Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: Start Docker Services (PostgreSQL & Redis)
+        run: |
+          docker compose up -d
+          echo "Waiting for PostgreSQL (mercur_postgres) and Redis (mercur_redis) to become healthy..."
+          timeout 60 bash -c 'until docker exec mercur_postgres pg_isready -U postgres -d mercur_db; do sleep 2; done'
+          timeout 30 bash -c 'until docker exec mercur_redis redis-cli ping | grep -q "PONG"; do sleep 1; done'
+          docker ps
+
+      - name: Install Backend Dependencies
+        run: |
+          cd my-marketplace
+          bun install --frozen-lockfile || bun install
+
+      - name: Setup Environment Variables
+        run: |
+          cd my-marketplace/packages/api
+          cp .env.template .env 2>/dev/null || true
+          cat << 'EOF' > .env
+          DATABASE_URL=postgresql://postgres:postgrespassword@localhost:5438/mercur_db
+          REDIS_URL=redis://localhost:6379
+          JWT_SECRET=supersecret
+          COOKIE_SECRET=supersecret
+          MEDUSA_BACKEND_URL=http://localhost:9000
+          ADMIN_CORS=http://localhost:7000,http://localhost:9000,http://127.0.0.1:7000,http://127.0.0.1:9000
+          AUTH_CORS=http://localhost:7000,http://localhost:9000,http://127.0.0.1:7000,http://127.0.0.1:9000
+          VENDOR_CORS=http://localhost:7001,http://localhost:9000,http://127.0.0.1:7001,http://127.0.0.1:9000
+          STORE_CORS=http://localhost:8000,http://localhost:9000,http://127.0.0.1:8000,http://127.0.0.1:9000
+          MEDUSA_FF_SELLER_REGISTRATION=true
+          EOF
+
+      - name: Run Database Migrations & Create Admin
+        run: |
+          cd my-marketplace/packages/api
+          bunx medusa db:migrate
+          bunx medusa user -e admin@daiviet.edu.vn -p AdminPassword123! || echo "Admin user already exists"
+
+      - name: Start Medusa Backend Server
+        run: |
+          cd my-marketplace/packages/api
+          bun run dev > backend.log 2>&1 &
+          echo "Waiting for Medusa backend to start at http://localhost:9000/health..."
+          timeout 120 bash -c 'until curl -s http://localhost:9000/health | grep -q "OK"; do sleep 2; done'
+          curl -i http://localhost:9000/health
+
+      - name: Execute E2E Flow Test (Python)
+        run: |
+          python test_e2e_flow.py
+
+      - name: Upload Backend Logs on Failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-logs
+          path: my-marketplace/packages/api/backend.log

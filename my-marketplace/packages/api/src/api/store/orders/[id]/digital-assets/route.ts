@@ -19,42 +19,45 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
   const query = req.scope.resolve(ContainerRegistrationKeys.QUERY)
   const fileService = req.scope.resolve(Modules.FILE)
 
-  // Gate 2: Query order and items
-  const { data: orders } = await query.graph({
-    entity: "order",
-    fields: [
-      "id",
-      "customer_id",
-      "payment_status",
-      "items.*",
-      "items.variant_id",
-    ],
-    filters: { id: orderId },
-  })
+    // Gate 2: Query order and items
+    const { data: orders } = await query.graph({
+      entity: "order",
+      fields: [
+        "id",
+        "customer_id",
+        "status",
+        "payment_status",
+        "items.*",
+        "items.variant_id",
+      ],
+      filters: { id: orderId },
+    })
 
-  const order = orders[0] as any
-  if (!order) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_FOUND,
-      `Order with id ${orderId} was not found.`
-    )
-  }
+    const order = orders[0] as any
+    if (!order) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_FOUND,
+        `Order with id ${orderId} was not found.`
+      )
+    }
 
-  // Gate 3: Check IDOR (Customer must own the order)
-  if (order.customer_id !== customerId) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "You are not authorized to access assets for this order."
-    )
-  }
+    // Gate 3: Check IDOR (Customer must own the order)
+    if (order.customer_id !== customerId) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "You are not authorized to access assets for this order."
+      )
+    }
 
-  // Gate 4: Check Payment Status (Must be captured)
-  if (order.payment_status !== "captured") {
-    throw new MedusaError(
-      MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
-      "Digital assets can only be accessed after payment is captured."
-    )
-  }
+    // Gate 4: Check Payment Status & Order Status (Must be active and captured)
+    if (order.status === "canceled" || order.payment_status !== "captured") {
+      throw new MedusaError(
+        MedusaError.Types.PAYMENT_AUTHORIZATION_ERROR,
+        order.status === "canceled"
+          ? "Đơn hàng đã bị hủy, quyền truy cập tài sản số bị khóa."
+          : "Digital assets can only be accessed after payment is captured."
+      )
+    }
 
   // Find all digital assets linked to variants in this order
   const variantIds = (order.items || [])
@@ -171,6 +174,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
         max_downloads: limitResult.max,
         remaining_downloads: limitResult.remaining,
         is_exhausted: limitResult.is_exhausted,
+        is_resumed_session: limitResult.is_resumed_session || false,
       }
     })
   )

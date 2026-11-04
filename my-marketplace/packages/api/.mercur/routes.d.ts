@@ -550,6 +550,7 @@ export type Routes = {
     hooks: {
         payment: {
             $provider: typeof import("@medusajs/medusa/api/hooks/payment/[provider]/route");
+            payos: typeof import("../src/api/hooks/payment/payos/route");
         };
         payout: typeof import("@mercurjs/core/api/hooks/payout/route");
     };
@@ -595,6 +596,7 @@ export type Routes = {
                     request: typeof import("@medusajs/medusa/api/store/orders/[id]/transfer/request/route");
                 };
                 digitalAssets: typeof import("../src/api/store/orders/[id]/digital-assets/route");
+                payosPayment: typeof import("../src/api/store/orders/[id]/payos-payment/route");
             };
         };
         paymentCollections: typeof import("@medusajs/medusa/api/store/payment-collections/route") & {

@@ -10,5 +10,14 @@ export default defineMiddlewares({
         authenticate("customer", ["session", "bearer"]),
       ],
     },
+    {
+      method: ["POST"],
+      matcher: "/store/orders/:id/payos-payment",
+      middlewares: [
+        authenticate("customer", ["session", "bearer"], {
+          allowUnauthenticated: true,
+        }),
+      ],
+    },
   ],
 })

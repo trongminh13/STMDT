@@ -60,7 +60,7 @@ async function runQATestSuite() {
     // -------------------------------------------------------------
     console.log("[Test 3] Tiêu thụ 5 lượt tải tuần tự (Download Mode)...")
     for (let i = 1; i <= 5; i++) {
-      const res = await downloadLimiter.checkAndIncrement(testOrderId, testAssetId, 5)
+      const res = await downloadLimiter.checkAndIncrement(testOrderId, testAssetId, 5, 180 * 86400, 0)
       console.log(`  • Tải lần ${i}: allowed=${res.allowed}, count=${res.count}, remaining=${res.remaining}, is_exhausted=${res.is_exhausted}`)
       if (!res.allowed || res.count !== i || res.remaining !== 5 - i) {
         throw new Error(`Test 3 Thất bại ở lần tải thứ ${i}: ${JSON.stringify(res)}`)
@@ -76,7 +76,7 @@ async function runQATestSuite() {
     // [Test 4] Boundary Enforcement (6th attempt rejected)
     // -------------------------------------------------------------
     console.log("[Test 4] Kiểm tra Giới hạn Ngưỡng: Thử tải lượt thứ 6 (Kỳ vọng bị chặn)...")
-    const sixthAttempt = await downloadLimiter.checkAndIncrement(testOrderId, testAssetId, 5)
+    const sixthAttempt = await downloadLimiter.checkAndIncrement(testOrderId, testAssetId, 5, 180 * 86400, 0)
     console.log("  • Kết quả lần 6:", sixthAttempt)
 
     if (
@@ -99,7 +99,7 @@ async function runQATestSuite() {
     const concurrencyAssetId = `asset_stress_${Date.now()}`
 
     const concurrentRequests = Array.from({ length: 10 }, (_, index) =>
-      downloadLimiter.checkAndIncrement(concurrencyOrderId, concurrencyAssetId, 5)
+      downloadLimiter.checkAndIncrement(concurrencyOrderId, concurrencyAssetId, 5, 180 * 86400, 0)
     )
 
     const concurrentResults = await Promise.all(concurrentRequests)
@@ -147,12 +147,12 @@ async function runQATestSuite() {
 
     // Ensure fallback handles sequential limits without crashing
     for (let j = 1; j <= 5; j++) {
-      const fbRes = await downloadLimiter.checkAndIncrement(fallbackOrderId, fallbackAssetId, 5)
+      const fbRes = await downloadLimiter.checkAndIncrement(fallbackOrderId, fallbackAssetId, 5, 180 * 86400, 0)
       if (!fbRes.allowed) {
         throw new Error(`Test 7 Thất bại ở bước fallback ${j}`)
       }
     }
-    const fbSixth = await downloadLimiter.checkAndIncrement(fallbackOrderId, fallbackAssetId, 5)
+    const fbSixth = await downloadLimiter.checkAndIncrement(fallbackOrderId, fallbackAssetId, 5, 180 * 86400, 0)
     if (fbSixth.allowed === false && fbSixth.remaining === 0) {
       console.log("  ✓ PASS Test 7: Cơ chế dự phòng hoạt động ổn định, kiểm soát chính xác ngưỡng 5 lượt.\n")
       passedTests++
