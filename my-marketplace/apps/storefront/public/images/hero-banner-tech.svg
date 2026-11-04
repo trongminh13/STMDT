@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 700 600" fill="none">
+  <defs>
+    <!-- Background Gradient -->
+    <linearGradient id="cyberBgSquare" x1="0" y1="0" x2="700" y2="600" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#080C14"/>
+      <stop offset="0.5" stop-color="#0F172A"/>
+      <stop offset="1" stop-color="#020617"/>
+    </linearGradient>
+
+    <!-- Neon Glows -->
+    <linearGradient id="cyanNeon" x1="200" y1="100" x2="500" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#00F2FE"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+
+    <linearGradient id="purpleNeon" x1="200" y1="400" x2="500" y2="100" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#8B5CF6"/>
+      <stop offset="1" stop-color="#EC4899"/>
+    </linearGradient>
+
+    <filter id="neonBlur" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+
+    <filter id="subtleGlow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+
+  <!-- Bo góc hình nền bo tròn chuẩn UI rounded-sm (rx=16) -->
+  <rect width="700" height="600" rx="16" fill="url(#cyberBgSquare)" stroke="#1E293B" stroke-width="2"/>
+
+  <!-- Perspective 3D Grid ở đáy ảnh -->
+  <g stroke="#1E293B" stroke-width="1.2" opacity="0.6">
+    <line x1="0" y1="460" x2="700" y2="460"/>
+    <line x1="0" y1="500" x2="700" y2="500"/>
+    <line x1="0" y1="535" x2="700" y2="535"/>
+    <line x1="0" y1="565" x2="700" y2="565"/>
+    <line x1="50" y1="600" x2="220" y2="430"/>
+    <line x1="160" y1="600" x2="280" y2="430"/>
+    <line x1="270" y1="600" x2="330" y2="430"/>
+    <line x1="350" y1="600" x2="350" y2="430"/>
+    <line x1="430" y1="600" x2="370" y2="430"/>
+    <line x1="540" y1="600" x2="420" y2="430"/>
+    <line x1="650" y1="600" x2="480" y2="430"/>
+  </g>
+
+  <!-- Glowing Orbs nền -->
+  <circle cx="200" cy="180" r="120" fill="#00F2FE" opacity="0.12" filter="url(#neonBlur)"/>
+  <circle cx="500" cy="220" r="140" fill="#8B5CF6" opacity="0.15" filter="url(#neonBlur)"/>
+
+  <!-- AI Core Trung Tâm: Khối Lập Phương Isometric 3D Phát Sáng -->
+  <g transform="translate(350, 230)">
+    <!-- Vòng xoay quỹ đạo ngoài -->
+    <ellipse cx="0" cy="0" rx="130" ry="65" stroke="url(#cyanNeon)" stroke-width="2" stroke-dasharray="8 6" opacity="0.8"/>
+    <ellipse cx="0" cy="0" rx="65" ry="130" stroke="url(#purpleNeon)" stroke-width="2" stroke-dasharray="8 6" opacity="0.8"/>
+
+    <!-- Lục giác 3D phát sáng -->
+    <polygon points="0,-85 74,-42 74,42 0,85 -74,42 -74,-42" fill="#0B132B" stroke="url(#cyanNeon)" stroke-width="3" filter="url(#subtleGlow)"/>
+    <polygon points="0,-60 52,-30 52,30 0,60 -52,30 -52,-30" fill="#1E1B4B" stroke="url(#purpleNeon)" stroke-width="2"/>
+
+    <!-- Lõi năng lượng AI tỏa sáng -->
+    <circle cx="0" cy="0" r="24" fill="#00F2FE" filter="url(#neonBlur)"/>
+    <circle cx="0" cy="0" r="12" fill="#FFFFFF"/>
+
+    <!-- Các hạt photon bay quanh quỹ đạo -->
+    <circle cx="120" cy="-25" r="5" fill="#00F2FE" filter="url(#subtleGlow)"/>
+    <circle cx="-110" cy="35" r="5" fill="#EC4899" filter="url(#subtleGlow)"/>
+    <circle cx="-30" cy="-115" r="4" fill="#38BDF8"/>
+    <circle cx="45" cy="115" r="4" fill="#A855F7"/>
+  </g>
+
+  <!-- 4 Badges Công Nghệ 4 Góc Cân Xứng -->
+  <!-- Góc Trên Trái: n8n Workflow -->
+  <g transform="translate(40, 50)">
+    <rect width="145" height="46" rx="10" fill="#18181B" stroke="#334155" stroke-width="1.5"/>
+    <circle cx="25" cy="23" r="10" fill="#EA4B71"/>
+    <text x="45" y="29" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="14" font-weight="700">n8n Workflow</text>
+  </g>
+
+  <!-- Góc Trên Phải: DeepSeek AI -->
+  <g transform="translate(515, 50)">
+    <rect width="145" height="46" rx="10" fill="#0F172A" stroke="#334155" stroke-width="1.5"/>
+    <circle cx="25" cy="23" r="10" fill="#0066FF"/>
+    <text x="45" y="29" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="14" font-weight="700">DeepSeek-V3</text>
+  </g>
+
+  <!-- Góc Dưới Trái: Zalo OA Bot -->
+  <g transform="translate(40, 390)">
+    <rect width="145" height="46" rx="10" fill="#0068FF" stroke="#38BDF8" stroke-width="1.5"/>
+    <rect x="14" y="12" width="22" height="22" rx="6" fill="#FFFFFF"/>
+    <path d="M19 18H29L21 28H30" stroke="#0068FF" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="45" y="29" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="14" font-weight="700">Zalo OA Bot</text>
+  </g>
+
+  <!-- Góc Dưới Phải: VietQR Instant -->
+  <g transform="translate(515, 390)">
+    <rect width="145" height="46" rx="10" fill="#10B981" stroke="#34D399" stroke-width="1.5"/>
+    <circle cx="25" cy="23" r="10" fill="#FFFFFF"/>
+    <path d="M22 23L24 25L28 21" stroke="#10B981" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="45" y="29" fill="#FFFFFF" font-family="system-ui, sans-serif" font-size="14" font-weight="700">VietQR Tức Thì</text>
+  </g>
+
+  <!-- Đường dẫn mạch điện tử kết nối các badge vào lõi -->
+  <path d="M185 73H260L310 180" stroke="#00F2FE" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+  <path d="M515 73H440L390 180" stroke="#8B5CF6" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+  <path d="M185 413H260L310 280" stroke="#0068FF" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+  <path d="M515 413H440L390 280" stroke="#10B981" stroke-width="1.5" stroke-dasharray="6 4" opacity="0.6"/>
+
+  <!-- Typography Tiêu Đề Trung Tâm Phía Dưới -->
+  <text x="350" y="505" text-anchor="middle" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="26" font-weight="900" letter-spacing="2">ĐẠI VIỆT AI</text>
+  <text x="350" y="535" text-anchor="middle" fill="#94A3B8" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600">HỆ SINH THÁI TỰ ĐỘNG HÓA &amp; MÃ NGUỒN SỐ</text>
+</svg>

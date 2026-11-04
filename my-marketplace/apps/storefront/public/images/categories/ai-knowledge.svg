@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="bgBrain" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#180D2B"/>
+      <stop offset="1" stop-color="#2D124D"/>
+    </linearGradient>
+    <linearGradient id="brainGrad" x1="120" y1="120" x2="280" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#A855F7"/>
+      <stop offset="1" stop-color="#F43F5E"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="32" fill="url(#bgBrain)"/>
+  <!-- AI Neural Network Circuit -->
+  <circle cx="150" cy="150" r="14" fill="#A855F7"/>
+  <circle cx="250" cy="150" r="14" fill="#A855F7"/>
+  <circle cx="120" cy="210" r="14" fill="#EC4899"/>
+  <circle cx="200" cy="200" r="22" fill="#F43F5E"/>
+  <circle cx="280" cy="210" r="14" fill="#EC4899"/>
+  <circle cx="160" cy="265" r="14" fill="#8B5CF6"/>
+  <circle cx="240" cy="265" r="14" fill="#8B5CF6"/>
+  <!-- Connecting Synapses -->
+  <line x1="150" y1="150" x2="200" y2="200" stroke="#C084FC" stroke-width="3"/>
+  <line x1="250" y1="150" x2="200" y2="200" stroke="#C084FC" stroke-width="3"/>
+  <line x1="120" y1="210" x2="200" y2="200" stroke="#F472B6" stroke-width="3"/>
+  <line x1="280" y1="210" x2="200" y2="200" stroke="#F472B6" stroke-width="3"/>
+  <line x1="160" y1="265" x2="200" y2="200" stroke="#A78BFA" stroke-width="3"/>
+  <line x1="240" y1="265" x2="200" y2="200" stroke="#A78BFA" stroke-width="3"/>
+  <text x="200" y="340" text-anchor="middle" fill="#E2E8F0" font-family="system-ui, sans-serif" font-size="20" font-weight="700">Gói Tri Thức & Prompt AI</text>
+  <text x="200" y="365" text-anchor="middle" fill="#C084FC" font-family="system-ui, sans-serif" font-size="14" font-weight="600">RAG Knowledge • System Prompts</text>
+</svg>

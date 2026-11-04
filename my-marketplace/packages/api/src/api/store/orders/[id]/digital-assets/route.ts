@@ -29,6 +29,8 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
         "payment_status",
         "items.*",
         "items.variant_id",
+        "items.variant.*",
+        "items.variant.product.*",
       ],
       filters: { id: orderId },
     })
@@ -59,6 +61,31 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
       )
     }
 
+  // Trích xuất các dịch vụ cài đặt / chuyển giao kỹ thuật (Concierge Services) nếu có trong đơn hàng
+  const conciergeServices = (order.items || [])
+    .filter((item: any) => {
+      const sku = item.variant?.sku || item.product?.metadata?.sku || ""
+      const supportType =
+        item.variant?.product?.metadata?.support_type ||
+        item.variant?.metadata?.support_type ||
+        item.metadata?.support_type
+      return supportType === "concierge_service" || sku.startsWith("PRO-")
+    })
+    .map((item: any) => ({
+      service_id: item.id,
+      sku: item.variant?.sku || item.product?.metadata?.sku || "PRO-SERVICE",
+      service_name: item.title || item.variant?.product?.title || "Dịch Vụ Kỹ Thuật 1-1",
+      status: "READY_FOR_SUPPORT",
+      instructions: "Vui lòng liên hệ Kỹ thuật viên qua Zalo OA hoặc Telegram chính thức của Đại Việt AI, cung cấp Mã Đơn Hàng để được hỗ trợ remote 1-1 qua UltraViewer trong vòng 24 giờ.",
+      support_channels: {
+        zalo_oa: "https://zalo.me/daivietai",
+        telegram: "https://t.me/daiviet_ai_support",
+        hotline: "1900-DAIVIET-AI",
+        working_hours: "08:00 - 21:00 (Thứ 2 - Thứ 7)",
+      },
+      order_reference: order.id,
+    }))
+
   // Find all digital assets linked to variants in this order
   const variantIds = (order.items || [])
     .map((item: any) => item.variant_id)
@@ -69,6 +96,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
       order_id: orderId,
       action,
       digital_assets: [],
+      ...(conciergeServices.length > 0 && { concierge_services: conciergeServices }),
     })
   }
 
@@ -90,7 +118,13 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
       order_id: orderId,
       action,
       digital_assets: [],
-      message: "No active digital assets found for this order.",
+      ...(conciergeServices.length > 0 && {
+        concierge_services: conciergeServices,
+        message: "Đơn hàng chứa dịch vụ kỹ thuật 1-1. Vui lòng kết nối Zalo OA hoặc Telegram để được hỗ trợ.",
+      }),
+      ...(conciergeServices.length === 0 && {
+        message: "No active digital assets found for this order.",
+      }),
     })
   }
 
@@ -129,6 +163,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
       order_id: orderId,
       action: "inspect",
       digital_assets: inspectedAssets,
+      ...(conciergeServices.length > 0 && { concierge_services: conciergeServices }),
     })
   }
 
@@ -193,5 +228,6 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
     order_id: orderId,
     action: "download",
     digital_assets: processedAssets,
+    ...(conciergeServices.length > 0 && { concierge_services: conciergeServices }),
   })
 }

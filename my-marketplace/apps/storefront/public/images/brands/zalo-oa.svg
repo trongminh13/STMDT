@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <rect width="200" height="80" rx="16" fill="#0068FF"/>
+  <rect x="25" y="22" width="36" height="36" rx="10" fill="#FFFFFF"/>
+  <path d="M34 32H52L37 47H54" stroke="#0068FF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="72" y="47" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="20" font-weight="800">Zalo OA</text>
+</svg>

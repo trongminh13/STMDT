@@ -7,11 +7,11 @@ import {
 import useFilters from '@/hooks/useFilters';
 
 const filters = [
-  { label: 'Sneakers', amount: 140 },
-  { label: 'Boots', amount: 100 },
-  { label: 'Flat Shoes', amount: 100 },
-  { label: 'High Heels', amount: 31 },
-  { label: 'Sandals', amount: 1 },
+  { label: 'Tự Động Hóa & Workflow (AUT)', amount: 5 },
+  { label: 'Mã Nguồn & Boilerplates (COD)', amount: 3 },
+  { label: 'Phần Mềm & Tiện Ích Số (SFT)', amount: 3 },
+  { label: 'Gói Tri Thức & Prompt AI (AIC)', amount: 2 },
+  { label: 'Dịch Vụ Cài Đặt Chuyên Môn (PRO)', amount: 2 },
 ];
 
 export const ProductFilter = () => {
@@ -23,7 +23,7 @@ export const ProductFilter = () => {
   };
 
   return (
-    <Accordion heading='Product'>
+    <Accordion heading='Danh mục sản phẩm'>
       <ul className='px-4'>
         {filters.map(({ label, amount }) => (
           <li key={label} className='mb-4'>

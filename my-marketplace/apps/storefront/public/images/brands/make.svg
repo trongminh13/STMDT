@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <rect width="200" height="80" rx="16" fill="#6D28D9"/>
+  <path d="M32 26L48 35V53L32 44V26Z" fill="#C4B5FD"/>
+  <path d="M48 35L64 26V44L48 53V35Z" fill="#EDE9FE"/>
+  <path d="M32 26L48 35L64 26L48 17L32 26Z" fill="#FFFFFF"/>
+  <text x="75" y="48" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="22" font-weight="800">Make</text>
+</svg>

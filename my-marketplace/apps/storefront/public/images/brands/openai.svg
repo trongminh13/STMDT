@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <rect width="200" height="80" rx="16" fill="#10A37F"/>
+  <path d="M48 24C44 24 40.5 26.2 38.8 29.5L40.2 30.3C41.6 27.5 44.5 25.6 48 25.6C52.7 25.6 56.6 29.1 57.2 33.7V34.5L59 35.6C60.8 36.7 62 38.7 62 41C62 44.4 59.4 47.2 56 47.5V45.9C58.5 45.6 60.4 43.5 60.4 41C60.4 39.2 59.4 37.6 58 36.7L55.6 35.3V33.7C55.6 28.3 51.3 24 48 24Z" fill="#FFFFFF"/>
+  <path d="M38.8 29.5C37.2 30.5 36 32.3 36 34.5C36 36.8 37.2 38.8 39 39.8L40.4 39C38.9 38.1 38 36.4 38 34.5C38 32.7 39 31.2 40.4 30.3L38.8 29.5Z" fill="#FFFFFF"/>
+  <circle cx="48" cy="40" r="14" stroke="#FFFFFF" stroke-width="3" stroke-dasharray="4 2"/>
+  <text x="75" y="47" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="21" font-weight="800">OpenAI</text>
+</svg>

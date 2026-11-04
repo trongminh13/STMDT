@@ -42,18 +42,18 @@ function groupItemsBySeller(cart: HttpTypes.StoreCart) {
       }
       groupedBySeller[seller.id].items.push(item)
     } else {
-      if (!groupedBySeller["fleek"]) {
-        groupedBySeller["fleek"] = {
+      if (!groupedBySeller["daiviet_ai"]) {
+        groupedBySeller["daiviet_ai"] = {
           seller: {
-            name: "Fleek",
-            id: "fleek",
+            name: "Đại Việt AI",
+            id: "daiviet_ai",
             photo: "/Logo.svg",
             created_at: new Date(),
           },
           items: [],
         }
       }
-      groupedBySeller["fleek"].items.push(item)
+      groupedBySeller["daiviet_ai"].items.push(item)
     }
   })
 

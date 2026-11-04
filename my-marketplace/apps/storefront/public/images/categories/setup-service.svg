@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="bgSetup" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#064E3B"/>
+      <stop offset="1" stop-color="#0F172A"/>
+    </linearGradient>
+    <linearGradient id="setupGrad" x1="120" y1="120" x2="280" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="32" fill="url(#bgSetup)"/>
+  <!-- Headset / Support Icon -->
+  <path d="M140 210V180C140 146.863 166.863 120 200 120C233.137 120 260 146.863 260 180V210" stroke="url(#setupGrad)" stroke-width="12" stroke-linecap="round"/>
+  <rect x="125" y="195" width="28" height="48" rx="10" fill="#10B981"/>
+  <rect x="247" y="195" width="28" height="48" rx="10" fill="#3B82F6"/>
+  <!-- Microphone -->
+  <path d="M260 230V245C260 258 248 268 235 268H210" stroke="#3B82F6" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="205" cy="268" r="8" fill="#10B981"/>
+  <text x="200" y="340" text-anchor="middle" fill="#E2E8F0" font-family="system-ui, sans-serif" font-size="20" font-weight="700">Dịch Vụ Cài Đặt Chuyên Môn</text>
+  <text x="200" y="365" text-anchor="middle" fill="#34D399" font-family="system-ui, sans-serif" font-size="14" font-weight="600">Hỗ Trợ Từ Xa 1-1 • SLA 2h</text>
+</svg>

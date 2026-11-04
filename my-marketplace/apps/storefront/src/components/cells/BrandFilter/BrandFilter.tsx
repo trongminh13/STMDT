@@ -10,11 +10,14 @@ import { SearchIcon } from '@/icons';
 import { useEffect, useState } from 'react';
 
 const brandFilters = [
-  { label: 'Abercrombie & Fitch', amount: 40 },
-  { label: 'Adidas', amount: 78 },
-  { label: 'Adore Me', amount: 7 },
-  { label: 'AllSaints', amount: 16 },
-  { label: 'American Eagle', amount: 7 },
+  { label: 'n8n Automation', amount: 5 },
+  { label: 'DeepSeek LLM', amount: 3 },
+  { label: 'Zalo Official Account', amount: 2 },
+  { label: 'Next.js 15 Fullstack', amount: 2 },
+  { label: 'Dify Agentic AI', amount: 2 },
+  { label: 'Cloudflare R2', amount: 1 },
+  { label: 'Make.com', amount: 1 },
+  { label: 'OpenAI GPT-4o', amount: 2 },
 ];
 
 export const BrandFilter = () => {
@@ -47,9 +50,9 @@ export const BrandFilter = () => {
   };
 
   return (
-    <Accordion heading='Brand'>
+    <Accordion heading='Nền tảng / AI Model'>
       <Input
-        placeholder='Search brands'
+        placeholder='Tìm kiếm công nghệ...'
         icon={<SearchIcon size={20} />}
         value={brandsSearch}
         onChange={(e) =>

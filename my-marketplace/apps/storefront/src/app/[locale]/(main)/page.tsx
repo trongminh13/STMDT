@@ -3,6 +3,7 @@ import {
   BlogSection,
   Hero,
   HomeCategories,
+  HomePopularBrandsSection,
   HomeProductSection,
   ShopByStyleSection,
 } from "@/components/sections"
@@ -43,10 +44,10 @@ export async function generateMetadata({
     locales,
   })
 
-  const title = "Home"
+  const title = "Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
   const description =
-    "Welcome to Mercur B2C Demo! Create a modern marketplace that you own and customize in every aspect with high-performance, fully customizable storefront."
-  const ogImage = "/B2C_Storefront_Open_Graph.png"
+    "Sàn thương mại điện tử chuyên biệt cho Workflow tự động hóa, Mã nguồn SaaS, Tiện ích số và Dịch vụ triển khai AI thực chiến hàng đầu Việt Nam."
+  const ogImage = "/images/hero-banner-tech.svg"
 
   return {
     title,
@@ -69,13 +70,13 @@ export async function generateMetadata({
     openGraph: {
       title: `${title} | ${
         process.env.NEXT_PUBLIC_SITE_NAME ||
-        "Mercur B2C Demo - Marketplace Storefront"
+        "Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
       }`,
       description,
       url: canonical,
       siteName:
         process.env.NEXT_PUBLIC_SITE_NAME ||
-        "Mercur B2C Demo - Marketplace Storefront",
+        "Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI",
       type: "website",
       images: [
         {
@@ -84,7 +85,7 @@ export async function generateMetadata({
           height: 630,
           alt:
             process.env.NEXT_PUBLIC_SITE_NAME ||
-            "Mercur B2C Demo - Marketplace Storefront",
+            "Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI",
         },
       ],
     },
@@ -111,16 +112,14 @@ export default async function Home({
 
   const siteName =
     process.env.NEXT_PUBLIC_SITE_NAME ||
-    "Mercur B2C Demo - Marketplace Storefront"
+    "Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
 
   return (
-    <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start text-primary">
+    <main className="flex flex-col gap-10 lg:gap-16 w-full text-primary pb-16">
       <link
         rel="preload"
         as="image"
-        href="/images/hero/Image.jpg"
-        imageSrcSet="/images/hero/Image.jpg 700w"
-        imageSizes="(min-width: 1024px) 50vw, 100vw"
+        href="/images/hero-banner-tech.svg"
       />
       <Script
         id="ld-org"
@@ -149,28 +148,38 @@ export default async function Home({
         }}
       />
 
+      {/* 1. Hero Section: Khẳng định định vị Sàn Thương Mại Điện Tử Hàng Số & AI */}
       <Hero
-        image="/images/hero/Image.jpg"
-        heading="Snag your style in a flash"
-        paragraph="Buy, sell, and discover pre-loved gems from the trendiest brands."
+        image="/images/hero-banner-tech.svg"
+        heading="Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
+        paragraph="Khám phá và sở hữu ngay các gói Workflow n8n, Mã nguồn Next.js SaaS, Tiện ích AI và Dịch vụ cài đặt 1-1 thực chiến hàng đầu."
         buttons={[
-          { label: "Buy now", path: "/categories" },
+          { label: "Khám phá giải pháp", path: "/categories" },
           {
-            label: "Sell now",
+            label: "Mở gian hàng Creator",
             path:
               process.env.NEXT_PUBLIC_VENDOR_URL ||
-              "https://vendor.mercurjs.com",
+              "http://localhost:7001",
           },
         ]}
       />
-      <div className="px-4 lg:px-8 w-full">
-        <HomeProductSection heading="trending listings" locale={locale} home />
-      </div>
-      <div className="px-4 lg:px-8 w-full">
-        <HomeCategories heading="SHOP BY CATEGORY" />
-      </div>
+
+      {/* 2. Trust Bar: Dải băng bảo chứng hệ sinh thái công nghệ & AI Models */}
+      <HomePopularBrandsSection />
+
+      {/* 3. Core Categories: Cây 5 nhóm giải pháp theo Product Taxonomy 1.0 */}
+      <HomeCategories heading="DANH MỤC GIẢI PHÁP AI" />
+
+      {/* 4. Featured Solutions: Danh sách sản phẩm AI & Workflow thực chiến nổi bật */}
+      <HomeProductSection heading="SẢN PHẨM & GIẢI PHÁP NỔI BẬT" locale={locale} home />
+
+      {/* 5. Enterprise Feature Banner: Giới thiệu giải pháp tự động hóa doanh nghiệp */}
       <BannerSection />
+
+      {/* 6. Solutions by Business Goal: Khám phá theo mục tiêu vận hành doanh nghiệp */}
       <ShopByStyleSection />
+
+      {/* 7. Knowledge Hub: Cẩm nang & Tri thức triển khai thực chiến */}
       <BlogSection />
     </main>
   )

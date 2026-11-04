@@ -4,42 +4,45 @@ import { BlogCard } from '@/components/organisms';
 export const blogPosts: BlogPost[] = [
   {
     id: 1,
-    title: "Summer's Most Elegant Accessories",
+    title: 'Hướng Dẫn Tích Hợp n8n Với Zalo Official Account Tự Động 24/7',
     excerpt:
-      "Discover this season's most sophisticated accessories that blend timeless elegance with modern design.",
-    image: '/images/blog/post-1.jpg',
-    category: 'ACCESSORIES',
+      'Chi tiết từng bước cấu hình Webhook và OpenAPI Zalo giúp doanh nghiệp tự động phản hồi tin nhắn, phân loại khách hàng tiềm năng không gián đoạn.',
+    image: '/images/categories/automation-workflow.svg',
+    category: 'TỰ ĐỘNG HÓA',
     href: '#',
   },
   {
     id: 2,
-    title: 'The Season’s Hottest Trends',
+    title: 'Xây Dựng Pipeline RAG Tài Liệu Với DeepSeek-V3 & Qdrant',
     excerpt:
-      'From bold colors to nostalgic silhouettes, explore the must-have looks defining this season’s fashion narrative.',
-    image: '/images/blog/post-2.jpg',
-    category: 'STYLE GUIDE',
+      'Kiến trúc trích xuất thông tin thông minh từ PDF/Excel, tối ưu hóa chi phí token và nâng cao độ chính xác khi tìm kiếm ngữ nghĩa nội bộ.',
+    image: '/images/categories/ai-knowledge.svg',
+    category: 'KỸ THUẬT AI',
     href: '#',
   },
   {
     id: 3,
-    title: 'Minimalist Outerwear Trends',
+    title: 'Chính Sách Bảo Vệ Người Mua & Quy Chế Giao Dịch Hàng Số T+3',
     excerpt:
-      'Explore the latest minimalist outerwear pieces that combine functionality with clean aesthetics.',
-    image: '/images/blog/post-3.jpg',
-    category: 'TRENDS',
+      'Tìm hiểu cơ chế kiểm duyệt tĩnh Permission Manifest, quy trình hỗ trợ cài đặt 1-1 và cam kết an toàn mã nguồn trên sàn Đại Việt AI.',
+    image: '/images/categories/setup-service.svg',
+    category: 'CHÍNH SÁCH & BẢO HÀNH',
     href: '#',
   },
 ];
 
 export function BlogSection() {
   return (
-    <section className='bg-tertiary container'>
-      <div className='flex items-center justify-between mb-12'>
-        <h2 className='heading-lg text-tertiary'>
-          STAY UP TO DATE
+    <section className='bg-primary container mx-auto px-4 lg:px-8 w-full'>
+      <div className='flex flex-col mb-8'>
+        <h2 className='heading-lg text-primary uppercase'>
+          CẨM NANG &amp; TRI THỨC TRIỂN KHAI AI
         </h2>
+        <p className='text-secondary text-sm md:text-base mt-1'>
+          Các bài viết hướng dẫn thực chiến, phân tích kiến trúc hệ thống và cẩm nang vận hành doanh nghiệp số.
+        </p>
       </div>
-      <div className='grid grid-cols-1 lg:grid-cols-3'>
+      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
         {blogPosts.map((post, index) => (
           <BlogCard
             key={post.id}

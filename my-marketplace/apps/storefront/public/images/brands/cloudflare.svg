@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 80" fill="none">
+  <rect width="200" height="80" rx="16" fill="#18181B"/>
+  <path d="M47 33C45.5 28.5 41.2 25 36 25C29.8 25 24.7 29.8 24.1 36C21.2 36.8 19 39.5 19 42.8C19 46.8 22.2 50 26.2 50H49.5C53.6 50 57 46.6 57 42.5C57 38.6 54 35.4 50.2 35.1C49.5 34.2 48.3 33.5 47 33Z" fill="#F38020"/>
+  <text x="68" y="46" fill="#FFFFFF" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="800">Cloudflare R2</text>
+</svg>

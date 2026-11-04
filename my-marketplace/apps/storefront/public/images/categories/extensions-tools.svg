@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" fill="none">
+  <defs>
+    <linearGradient id="bgExt" x1="0" y1="0" x2="400" y2="400" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0B132B"/>
+      <stop offset="1" stop-color="#1C2541"/>
+    </linearGradient>
+    <linearGradient id="puzzleGrad" x1="120" y1="120" x2="280" y2="280" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#06B6D4"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="400" rx="32" fill="url(#bgExt)"/>
+  <!-- Puzzle Piece -->
+  <path d="M150 120H210C210 135 220 145 235 145C250 145 260 135 260 120H280C291 120 300 129 300 140V180C285 180 275 190 275 205C275 220 285 230 300 230V260C300 271 291 280 280 280H250C250 265 240 255 225 255C210 255 200 265 200 280H150C139 280 130 271 130 260V225C145 225 155 215 155 200C155 185 145 175 130 175V140C130 129 139 120 150 120Z" fill="url(#puzzleGrad)"/>
+  <circle cx="215" cy="200" r="16" fill="#FFFFFF" fill-opacity="0.3"/>
+  <text x="200" y="340" text-anchor="middle" fill="#E2E8F0" font-family="system-ui, sans-serif" font-size="20" font-weight="700">Phần Mềm & Tiện Ích Số</text>
+  <text x="200" y="365" text-anchor="middle" fill="#10B981" font-family="system-ui, sans-serif" font-size="14" font-weight="600">Chrome Extension • CLI Tools</text>
+</svg>
