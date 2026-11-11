@@ -1,11 +1,11 @@
 import { ProductListingSkeleton } from "@/components/organisms/ProductListingSkeleton/ProductListingSkeleton"
-import { getCategoryByHandle, collectCategorySubtreeIds } from "@/lib/data/categories"
+import { getCategoryByHandle, collectCategorySubtreeIds, LEGACY_CATEGORY_HANDLES } from "@/lib/data/categories"
 import { Suspense } from "react"
 
 import type { Metadata } from "next"
 import { Breadcrumbs } from "@/components/atoms"
 import { SearchProductsListing, ProductListing } from "@/components/sections"
-import { notFound } from "next/navigation"
+import { notFound, redirect } from "next/navigation"
 import isBot from "@/lib/helpers/isBot"
 import { headers } from "next/headers"
 import Script from "next/script"
@@ -81,6 +81,10 @@ async function Category({
 }) {
   const { category: categoryHandle, locale } = await params
 
+  if (LEGACY_CATEGORY_HANDLES.has(categoryHandle.toLowerCase())) {
+    redirect(`/${locale}/categories`)
+  }
+
   const category = await getCategoryByHandle(categoryHandle)
 
   if (!category) {
@@ -98,11 +102,19 @@ async function Category({
       path: "/categories",
       label: "Tất cả sản phẩm",
     },
-    {
-      path: `/categories/${categoryHandle}`,
-      label: category.name,
-    },
   ]
+
+  if (category.parent_category) {
+    breadcrumbsItems.push({
+      path: `/categories/${category.parent_category.handle}`,
+      label: category.parent_category.name,
+    })
+  }
+
+  breadcrumbsItems.push({
+    path: `/categories/${categoryHandle}`,
+    label: category.name,
+  })
 
   const headersList = await headers()
   const host = headersList.get("host")
@@ -112,7 +124,7 @@ async function Category({
     response: { products: jsonLdProducts },
   } = await listProducts({
     countryCode: locale,
-    queryParams: { limit: 8, order: "created_at", fields: "id,title,handle" },
+    queryParams: { limit: 8, order: "-created_at", fields: "id,title,handle" },
     category_id: categoryIds,
   })
 
@@ -123,6 +135,31 @@ async function Category({
     name: p.title,
   }))
 
+  const breadcrumbListElements = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Tất cả sản phẩm",
+      item: `${baseUrl}/${locale}/categories`,
+    },
+  ]
+
+  if (category.parent_category) {
+    breadcrumbListElements.push({
+      "@type": "ListItem",
+      position: 2,
+      name: category.parent_category.name,
+      item: `${baseUrl}/${locale}/categories/${category.parent_category.handle}`,
+    })
+  }
+
+  breadcrumbListElements.push({
+    "@type": "ListItem",
+    position: breadcrumbListElements.length + 1,
+    name: category.name,
+    item: `${baseUrl}/${locale}/categories/${categoryHandle}`,
+  })
+
   return (
     <main className="container">
       <Script
@@ -132,14 +169,7 @@ async function Category({
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: category.name,
-                item: `${baseUrl}/${locale}/categories/${categoryHandle}`,
-              },
-            ],
+            itemListElement: breadcrumbListElements,
           }),
         }}
       />

@@ -1,20 +1,22 @@
 import { ProductListingSkeleton } from "@/components/organisms/ProductListingSkeleton/ProductListingSkeleton"
-import { getCategoryByHandle, collectCategorySubtreeIds } from "@/lib/data/categories"
+import { getCategoryByHandle, collectCategorySubtreeIds, LEGACY_CATEGORY_HANDLES } from "@/lib/data/categories"
 import { Suspense } from "react"
 
 import type { Metadata } from "next"
-import { getBaseUrl } from "@/lib/helpers/base-url"
-import { Breadcrumbs } from '@/components/atoms/Breadcrumbs/Breadcrumbs';
-import { SearchProductsListing } from '@/components/sections/ProductListing/SearchProductsListing';
-import { notFound } from "next/navigation"
+import { Breadcrumbs } from "@/components/atoms"
+import { SearchProductsListing, ProductListing } from "@/components/sections"
+import { notFound, redirect } from "next/navigation"
+import isBot from "@/lib/helpers/isBot"
+import { headers } from "next/headers"
+import Script from "next/script"
 import { listRegions } from "@/lib/data/regions"
-import { searchProducts } from "@/lib/data/products"
-import { PRODUCT_LIMIT } from "@/const"
+import { listProducts } from "@/lib/data/products"
 import {
   buildHreflangAlternates,
   getStorefrontLocales,
 } from "@/lib/helpers/hreflang"
 
+export const revalidate = 60
 
 export async function generateMetadata({
   params,
@@ -22,7 +24,10 @@ export async function generateMetadata({
   params: Promise<{ category: string; locale: string }>
 }): Promise<Metadata> {
   const { category: categoryHandle, locale } = await params
-  const baseUrl = getBaseUrl()
+  const headersList = await headers()
+  const host = headersList.get("host")
+  const protocol = headersList.get("x-forwarded-proto") || "https"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`
 
   const cat = await getCategoryByHandle(categoryHandle)
   if (!cat) {
@@ -66,30 +71,19 @@ export async function generateMetadata({
   }
 }
 
-export default function CategoryPage({
-  params,
-  searchParams,
-}: PageProps<"/[locale]/categories/[category]">) {
-  return (
-    <main className="container">
-      <Suspense
-        fallback={
-          <div aria-busy="true" data-testid="category-page-loading">
-            <ProductListingSkeleton />
-          </div>
-        }
-      >
-        <Category params={params} searchParams={searchParams} />
-      </Suspense>
-    </main>
-  )
-}
-
 async function Category({
   params,
-  searchParams,
-}: Pick<PageProps<"/[locale]/categories/[category]">, "params" | "searchParams">) {
+}: {
+  params: Promise<{
+    category: string
+    locale: string
+  }>
+}) {
   const { category: categoryHandle, locale } = await params
+
+  if (LEGACY_CATEGORY_HANDLES.has(categoryHandle.toLowerCase())) {
+    redirect(`/${locale}/categories`)
+  }
 
   const category = await getCategoryByHandle(categoryHandle)
 
@@ -100,23 +94,38 @@ async function Category({
   // Include the whole category subtree so a parent department page lists every
   // product in its sub-categories, not just products attached to the parent.
   const categoryIds = collectCategorySubtreeIds(category)
+  const ua = (await headers()).get("user-agent") || ""
+  const bot = isBot(ua)
 
   const breadcrumbsItems = [
     {
       path: "/categories",
       label: "Tất cả sản phẩm",
     },
-    {
-      path: `/categories/${categoryHandle}`,
-      label: category.name,
-    },
   ]
 
-  const baseUrl = getBaseUrl()
-  const { products: jsonLdProducts } = await searchProducts({
+  if (category.parent_category) {
+    breadcrumbsItems.push({
+      path: `/categories/${category.parent_category.handle}`,
+      label: category.parent_category.name,
+    })
+  }
+
+  breadcrumbsItems.push({
+    path: `/categories/${categoryHandle}`,
+    label: category.name,
+  })
+
+  const headersList = await headers()
+  const host = headersList.get("host")
+  const protocol = headersList.get("x-forwarded-proto") || "https"
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || `${protocol}://${host}`
+  const {
+    response: { products: jsonLdProducts },
+  } = await listProducts({
     countryCode: locale,
+    queryParams: { limit: 8, order: "-created_at", fields: "id,title,handle" },
     category_id: categoryIds,
-    limit: PRODUCT_LIMIT,
   })
 
   const itemList = jsonLdProducts.slice(0, 8).map((p, idx) => ({
@@ -126,27 +135,45 @@ async function Category({
     name: p.title,
   }))
 
+  const breadcrumbListElements = [
+    {
+      "@type": "ListItem",
+      position: 1,
+      name: "Tất cả sản phẩm",
+      item: `${baseUrl}/${locale}/categories`,
+    },
+  ]
+
+  if (category.parent_category) {
+    breadcrumbListElements.push({
+      "@type": "ListItem",
+      position: 2,
+      name: category.parent_category.name,
+      item: `${baseUrl}/${locale}/categories/${category.parent_category.handle}`,
+    })
+  }
+
+  breadcrumbListElements.push({
+    "@type": "ListItem",
+    position: breadcrumbListElements.length + 1,
+    name: category.name,
+    item: `${baseUrl}/${locale}/categories/${categoryHandle}`,
+  })
+
   return (
-    <>
-      <script
+    <main className="container">
+      <Script
         id="ld-breadcrumbs-category"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: category.name,
-                item: `${baseUrl}/${locale}/categories/${categoryHandle}`,
-              },
-            ],
+            itemListElement: breadcrumbListElements,
           }),
         }}
       />
-      <script
+      <Script
         id="ld-itemlist-category"
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -163,11 +190,15 @@ async function Category({
 
       <h1 className="heading-xl uppercase">{category.name}</h1>
 
-      <SearchProductsListing
-        category_id={categoryIds}
-        locale={locale}
-        searchParams={searchParams}
-      />
-    </>
+      <Suspense fallback={<div data-testid="category-page-loading"><ProductListingSkeleton /></div>}>
+        {bot ? (
+          <ProductListing category_id={categoryIds} showSidebar locale={locale} />
+        ) : (
+          <SearchProductsListing category_id={categoryIds} locale={locale} />
+        )}
+      </Suspense>
+    </main>
   )
 }
+
+export default Category

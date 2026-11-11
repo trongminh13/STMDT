@@ -11,6 +11,7 @@ interface DigitalAssetItem {
   download_url?: string | null
   remaining_downloads?: number
   version?: string
+  file_hash_sha256?: string
 }
 
 interface ConciergeServiceItem {
@@ -214,11 +215,23 @@ export const DigitalAssetDelivery = async ({
                     className="p-4 border rounded-sm flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-primary"
                   >
                     <div>
-                      <p className="font-semibold text-primary">{asset.name || asset.file_name || "Tài sản số Đại Việt AI"}</p>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <p className="font-semibold text-primary">{asset.name || asset.file_name || "Tài sản số Đại Việt AI"}</p>
+                        {asset.version && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-secondary/10 border text-secondary">
+                            {asset.version.startsWith("v") ? asset.version : `v${asset.version}`}
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-secondary mt-1">
                         Dung lượng: {asset.file_size ? `${(asset.file_size / 1024).toFixed(1)} KB` : "Tiêu chuẩn"} • 
                         Thời hạn token: 24 giờ • Lượt tải còn lại: {asset.remaining_downloads ?? 5}/5
                       </p>
+                      {asset.file_hash_sha256 && (
+                        <p className="text-[11px] text-secondary font-mono mt-0.5 select-all">
+                          SHA-256: {asset.file_hash_sha256.substring(0, 16)}...
+                        </p>
+                      )}
                     </div>
                     <div className="flex items-center gap-2 flex-wrap shrink-0">
                       {asset.download_url ? (

@@ -143,7 +143,7 @@ export const AI_CATEGORY_TAXONOMY: Record<
 };
 
 // Legacy fashion demo categories to filter out
-const LEGACY_CATEGORY_HANDLES = new Set([
+export const LEGACY_CATEGORY_HANDLES = new Set([
   'sandals',
   'sneakers',
   'boots',
@@ -192,7 +192,11 @@ const buildStandardAiCategories = (): {
           is_internal: false,
           rank: cRank,
           parent_category_id: parentId,
-          parent_category: null,
+          parent_category: {
+            id: parentId,
+            name: meta.name,
+            handle: parentHandle,
+          } as unknown as HttpTypes.StoreProductCategory,
           category_children: [],
           products: [],
           created_at: new Date().toISOString(),
@@ -326,9 +330,10 @@ export const getCategoryByHandle = async (categoryHandle: string) => {
   try {
     const res = (await (sdk.store.productCategories
       .query({
-        fields: 'id,name,handle,parent_category_id,*category_children',
+        fields: 'id,name,handle,parent_category_id,*parent_category,*category_children',
         handle: categoryHandle,
         include_descendants_tree: true,
+        include_ancestors_tree: true,
         fetchOptions: {
           cache: 'force-cache',
           next: getGlobalCacheOptions(
@@ -340,6 +345,18 @@ export const getCategoryByHandle = async (categoryHandle: string) => {
 
     const cat = res?.product_categories?.[0] ?? null;
     if (cat && !LEGACY_CATEGORY_HANDLES.has((cat.handle || '').toLowerCase())) {
+      if (cat.parent_category_id && !cat.parent_category) {
+        for (const [pHandle, pMeta] of Object.entries(AI_CATEGORY_TAXONOMY)) {
+          if (pMeta.subcategories.some((s) => s.handle === cat.handle)) {
+            cat.parent_category = {
+              id: cat.parent_category_id,
+              name: pMeta.name,
+              handle: pHandle,
+            } as unknown as HttpTypes.StoreProductCategory;
+            break;
+          }
+        }
+      }
       if (
         !cat.parent_category_id &&
         (!cat.category_children || cat.category_children.length === 0)

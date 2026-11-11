@@ -1,9 +1,7 @@
 import { HttpTypes } from '@medusajs/types';
 
-import { cacheLife, cacheTag } from 'next/cache';
-
 import { sdk } from '@/lib/client';
-import { CACHE_TAGS, cacheFailedRead } from './cache-tags';
+import { CACHE_TAGS, getGlobalCacheOptions } from './cache-tags';
 
 interface CategoriesProps {
   query?: Record<string, unknown>;
@@ -145,7 +143,7 @@ export const AI_CATEGORY_TAXONOMY: Record<
 };
 
 // Legacy fashion demo categories to filter out
-const LEGACY_CATEGORY_HANDLES = new Set([
+export const LEGACY_CATEGORY_HANDLES = new Set([
   'sandals',
   'sneakers',
   'boots',
@@ -194,7 +192,11 @@ const buildStandardAiCategories = (): {
           is_internal: false,
           rank: cRank,
           parent_category_id: parentId,
-          parent_category: null,
+          parent_category: {
+            id: parentId,
+            name: meta.name,
+            handle: parentHandle,
+          } as unknown as HttpTypes.StoreProductCategory,
           category_children: [],
           products: [],
           created_at: new Date().toISOString(),
@@ -237,10 +239,6 @@ const buildStandardAiCategories = (): {
 };
 
 export const listCategories = async ({ query }: Partial<CategoriesProps> = {}) => {
-  'use cache';
-  cacheLife('hours');
-  cacheTag(CACHE_TAGS.categories);
-
   const limit = query?.limit || 100;
 
   let rawCategories: HttpTypes.StoreProductCategory[] = [];
@@ -253,17 +251,19 @@ export const listCategories = async ({ query }: Partial<CategoriesProps> = {}) =
         include_ancestors_tree: true,
         limit,
         ...query,
-        fetchOptions: { cache: 'no-store' },
+        fetchOptions: {
+          cache: 'force-cache',
+          next: getGlobalCacheOptions(CACHE_TAGS.categories),
+        },
       } as never) as unknown as Promise<{
       product_categories: HttpTypes.StoreProductCategory[];
     }>)) as { product_categories: HttpTypes.StoreProductCategory[] };
-    rawCategories = res.product_categories || [];
+    rawCategories = res?.product_categories || [];
   } catch {
-    cacheFailedRead();
     rawCategories = [];
   }
 
-  // Filter out obsolete fashion/shoe categories
+  // Filter out legacy fashion/shoe categories
   const filteredFromDb = rawCategories.filter((cat) => {
     const handle = (cat.handle || '').toLowerCase();
     const name = (cat.name || '').toLowerCase();
@@ -290,7 +290,6 @@ export const listCategories = async ({ query }: Partial<CategoriesProps> = {}) =
     );
 
     if (dbParent) {
-      // Check if DB parent has children
       const dbChildren = filteredFromDb.filter(
         (c) => c.parent_category_id === dbParent.id
       );
@@ -305,7 +304,7 @@ export const listCategories = async ({ query }: Partial<CategoriesProps> = {}) =
 
       parentCategories.push({
         ...dbParent,
-        name: stdParent.name, // Ensure standard Vietnamese name
+        name: stdParent.name,
         category_children: resolvedChildren,
       });
       allSubcategories.push(...resolvedChildren);
@@ -324,11 +323,6 @@ export const listCategories = async ({ query }: Partial<CategoriesProps> = {}) =
 };
 
 export const getCategoryByHandle = async (categoryHandle: string) => {
-  'use cache';
-  cacheLife('hours');
-  cacheTag(CACHE_TAGS.categories, CACHE_TAGS.category(categoryHandle));
-
-  // If requested handle is in legacy blacklist, return null
   if (LEGACY_CATEGORY_HANDLES.has(categoryHandle.toLowerCase())) {
     return null;
   }
@@ -336,15 +330,33 @@ export const getCategoryByHandle = async (categoryHandle: string) => {
   try {
     const res = (await (sdk.store.productCategories
       .query({
-        fields: 'id,name,handle,parent_category_id,*category_children',
+        fields: 'id,name,handle,parent_category_id,*parent_category,*category_children',
         handle: categoryHandle,
         include_descendants_tree: true,
-        fetchOptions: { cache: 'no-store' },
+        include_ancestors_tree: true,
+        fetchOptions: {
+          cache: 'force-cache',
+          next: getGlobalCacheOptions(
+            CACHE_TAGS.categories,
+            CACHE_TAGS.category(categoryHandle)
+          ),
+        },
       } as never) as unknown as Promise<HttpTypes.StoreProductCategoryListResponse>)) as HttpTypes.StoreProductCategoryListResponse;
 
-    const cat = res.product_categories?.[0] ?? null;
+    const cat = res?.product_categories?.[0] ?? null;
     if (cat && !LEGACY_CATEGORY_HANDLES.has((cat.handle || '').toLowerCase())) {
-      // If parent category from DB has no children, enrich with standard children
+      if (cat.parent_category_id && !cat.parent_category) {
+        for (const [pHandle, pMeta] of Object.entries(AI_CATEGORY_TAXONOMY)) {
+          if (pMeta.subcategories.some((s) => s.handle === cat.handle)) {
+            cat.parent_category = {
+              id: cat.parent_category_id,
+              name: pMeta.name,
+              handle: pHandle,
+            } as unknown as HttpTypes.StoreProductCategory;
+            break;
+          }
+        }
+      }
       if (
         !cat.parent_category_id &&
         (!cat.category_children || cat.category_children.length === 0)
@@ -378,10 +390,9 @@ export const getCategoryByHandle = async (categoryHandle: string) => {
       return cat;
     }
   } catch {
-    cacheFailedRead();
+    // ignore
   }
 
-  // Fallback to standard taxonomy if not yet created in Medusa DB
   const standard = buildStandardAiCategories();
   const parent = standard.parentCategories.find((c) => c.handle === categoryHandle);
   if (parent) return parent;

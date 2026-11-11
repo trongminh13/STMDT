@@ -141,28 +141,39 @@ export default async function Home({
         }}
       />
 
+      {/* 1. Hero Section */}
       <Hero
-        image="/images/hero/Image.jpg"
-        heading="Snag your style in a flash"
-        paragraph="Buy, sell, and discover pre-loved gems from the trendiest brands."
+        image="/images/hero-banner-tech.svg"
+        heading="Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
+        paragraph="Khám phá và sở hữu ngay các gói Workflow n8n, Mã nguồn Next.js SaaS, Tiện ích AI và Dịch vụ cài đặt 1-1 thực chiến hàng đầu."
         buttons={[
-          { label: "Buy now", path: "/categories" },
+          { label: "Khám phá giải pháp", path: "/categories" },
           {
-            label: "Sell now",
+            label: "Mở gian hàng Creator",
             path:
               process.env.NEXT_PUBLIC_VENDOR_URL ||
-              "https://vendor.mercurjs.com",
+              "http://localhost:7001",
           },
         ]}
       />
+
+      {/* 2. Featured Solutions (Trending Products) */}
       <div className="px-4 lg:px-8 w-full">
-        <HomeProductSection heading="trending listings" locale={locale} home />
+        <HomeProductSection heading="SẢN PHẨM & GIẢI PHÁP NỔI BẬT" locale={locale} home />
       </div>
+
+      {/* 3. Core Categories */}
       <div className="px-4 lg:px-8 w-full">
-        <HomeCategories heading="SHOP BY CATEGORY" />
+        <HomeCategories heading="DANH MỤC GIẢI PHÁP AI" />
       </div>
+
+      {/* 4. Enterprise Feature Banner */}
       <BannerSection />
+
+      {/* 5. Solutions by Business Goal */}
       <ShopByStyleSection />
+
+      {/* 6. Knowledge Hub */}
       <BlogSection />
     </main>
   )

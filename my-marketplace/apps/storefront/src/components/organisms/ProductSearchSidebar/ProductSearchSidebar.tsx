@@ -56,9 +56,6 @@ const ATTRIBUTE_HEADINGS: Record<string, string> = {
   delivery_format: "Hình thức bàn giao",
   skill_level: "Mức độ phức tạp",
   license: "Bản quyền & Giấy phép",
-  size: "Kích cỡ",
-  color: "Màu sắc",
-  condition: "Tình trạng",
 }
 
 const getAiBrandColor = (name: string): string => {

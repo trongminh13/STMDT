@@ -102,7 +102,7 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
 
   const { data: assets } = await query.graph({
     entity: "digital_asset",
-    fields: ["id", "file_id", "name", "mime_type", "is_revoked", "product_variant.*"],
+    fields: ["id", "file_id", "name", "mime_type", "is_revoked", "metadata", "product_variant.*"],
     filters: {
       product_variant: {
         id: variantIds,
@@ -150,6 +150,9 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
           id: asset.id,
           name: asset.name,
           mime_type: asset.mime_type,
+          file_size: asset.metadata?.file_size || null,
+          version: asset.metadata?.version || "1.0.0",
+          file_hash_sha256: asset.metadata?.file_hash_sha256 || null,
           download_url: null, // QA Security Guard: Never leak download URL in inspect mode
           download_count: stats.count,
           max_downloads: stats.max,
@@ -182,6 +185,9 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
           id: asset.id,
           name: asset.name,
           mime_type: asset.mime_type,
+          file_size: asset.metadata?.file_size || null,
+          version: asset.metadata?.version || "1.0.0",
+          file_hash_sha256: asset.metadata?.file_hash_sha256 || null,
           download_url: null,
           download_count: limitResult.count,
           max_downloads: limitResult.max,
@@ -209,6 +215,9 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
         id: asset.id,
         name: asset.name,
         mime_type: asset.mime_type,
+        file_size: asset.metadata?.file_size || null,
+        version: asset.metadata?.version || "1.0.0",
+        file_hash_sha256: asset.metadata?.file_hash_sha256 || null,
         download_url: downloadUrl,
         download_count: limitResult.count,
         max_downloads: limitResult.max,

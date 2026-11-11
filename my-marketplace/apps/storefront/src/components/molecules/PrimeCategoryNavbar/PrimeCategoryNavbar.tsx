@@ -12,7 +12,7 @@ export const PrimeCategoryNavbar = () => {
       {Object.keys(primeCategories).map((key: string) => (
         <LocalizedClientLink
           key={key}
-          href={`/${key}`}
+          href={`/categories/${key}`}
           className={cn(
             "uppercase label-lg px-2 pb-1",
             key === category && "border-b border-primary"

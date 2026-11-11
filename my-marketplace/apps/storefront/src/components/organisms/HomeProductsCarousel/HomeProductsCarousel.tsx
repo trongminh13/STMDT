@@ -17,16 +17,22 @@ export const HomeProductsCarousel = async ({
   let displayProducts = sellerProducts
 
   if (!displayProducts || displayProducts.length === 0) {
+    const targetLimit = home ? 4 : 8
     const {
       response: { products },
     } = await listProducts({
       countryCode: locale,
       queryParams: {
-        limit: home ? 4 : 8,
-        order: "created_at",
+        limit: 16,
+        order: "-created_at",
       },
     }).catch(() => ({ response: { products: [] } }))
-    displayProducts = products
+
+    const pricedProducts = (products || []).filter((prod) =>
+      prod.variants?.some((v) => v?.calculated_price != null)
+    )
+
+    displayProducts = (pricedProducts.length > 0 ? pricedProducts : (products || [])).slice(0, targetLimit)
   }
 
   if (!displayProducts || !displayProducts.length) return null
