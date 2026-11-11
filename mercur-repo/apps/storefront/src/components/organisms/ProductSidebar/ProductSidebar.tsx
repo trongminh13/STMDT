@@ -67,14 +67,14 @@ export const ProductSidebar = () => {
             onClick={() => clearAllFilters()}
             data-testid="sidebar-clear-all-button"
           >
-            Clear all
+            Xóa tất cả
           </Button>
           <Button
             className="label-sm w-1/2 uppercase"
             onClick={() => setFilterModal(false)}
             data-testid="sidebar-view-listings-button"
           >
-            View listings
+            Xem kết quả
           </Button>
         </div>
       </div>

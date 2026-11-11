@@ -3,7 +3,11 @@
   "version": "2.3.7",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "clean": "rm -rf .next",
+    "predev": "if [ -f .next/BUILD_ID ]; then rm -rf .next; else rm -rf .next/server/edge .next/static/development; fi",
+    "dev": "next dev",
+    "dev:clean": "rm -rf .next && next dev",
+    "dev:turbo": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "next lint"

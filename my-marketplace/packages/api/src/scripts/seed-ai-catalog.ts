@@ -597,6 +597,35 @@ export default async function seedAiCatalog({ container }: ExecArgs) {
       }),
     }
 
+    let platformVal = "n8n"
+    if (item.title.toLowerCase().includes("dify")) platformVal = "Dify"
+    else if (item.title.toLowerCase().includes("make")) platformVal = "Make.com"
+    else if (item.title.toLowerCase().includes("next.js") || item.title.toLowerCase().includes("saas")) platformVal = "Next.js 15"
+    else if (item.title.toLowerCase().includes("fastapi") || item.title.toLowerCase().includes("python")) platformVal = "Python / FastAPI"
+    else if (item.title.toLowerCase().includes("chrome")) platformVal = "Chrome Extension"
+    else if (item.title.toLowerCase().includes("docker") || item.title.toLowerCase().includes("vps") || item.title.toLowerCase().includes("cài đặt")) platformVal = "Docker"
+
+    let aiModelVal = "DeepSeek-V3 / R1"
+    if (item.title.toLowerCase().includes("openai") || item.title.toLowerCase().includes("gpt")) aiModelVal = "OpenAI (GPT-4o)"
+    else if (item.title.toLowerCase().includes("gemini")) aiModelVal = "Gemini 2.0"
+    else if (item.title.toLowerCase().includes("claude")) aiModelVal = "Anthropic (Claude 3.5)"
+    else if (item.title.toLowerCase().includes("không") || item.title.toLowerCase().includes("sao lưu") || item.title.toLowerCase().includes("cloudflare")) aiModelVal = "Không dùng AI"
+    else if (item.title.toLowerCase().includes("ollama") || item.title.toLowerCase().includes("local")) aiModelVal = "Ollama / Local LLM"
+
+    let deliveryVal = "JSON Workflow File"
+    if (item.title.toLowerCase().includes("boilerplate") || item.title.toLowerCase().includes("starter kit") || item.title.toLowerCase().includes("source code")) deliveryVal = "Full Source Code ZIP"
+    else if (item.title.toLowerCase().includes("dify") || item.title.toLowerCase().includes("dsl")) deliveryVal = "Dify DSL File"
+    else if (item.title.toLowerCase().includes("chrome") || item.title.toLowerCase().includes("extension")) deliveryVal = "Chrome Extension ZIP"
+    else if (item.title.toLowerCase().includes("prompt") || item.title.toLowerCase().includes("dataset")) deliveryVal = "Prompt & Dataset"
+    else if (item.title.toLowerCase().includes("cài đặt") || item.title.toLowerCase().includes("dịch vụ") || item.isConciergeService) deliveryVal = "Dịch vụ Cài đặt 1-1"
+
+    let skillVal = "Mì ăn liền (< 5 phút)"
+    if (deliveryVal === "Full Source Code ZIP" || platformVal === "Python / FastAPI") {
+      skillVal = "Nâng cao (Cần Dev/Docker)"
+    } else if (item.title.toLowerCase().includes("api key") || item.title.toLowerCase().includes("webhook") || deliveryVal === "Chrome Extension ZIP") {
+      skillVal = "Cơ bản (Cần API Key)"
+    }
+
     productsToCreate.push({
       title: item.title,
       handle,
@@ -611,10 +640,19 @@ export default async function seedAiCatalog({ container }: ExecArgs) {
         {
           title: item.isConciergeService ? "Gói Dịch Vụ Cài Đặt Trọn Gói" : "Bản Quyền Tiêu Chuẩn (Standard License)",
           sku: `${item.sku}-STD`,
-          options: {},
+          options: {
+            "Nền tảng & Runtime": platformVal,
+            "Mô hình AI hỗ trợ": aiModelVal,
+            "Hình thức bàn giao": deliveryVal,
+            "Mức độ phức tạp": skillVal,
+          },
           metadata: {
             sku: item.sku,
             file_name: item.fileName,
+            platform: platformVal,
+            ai_model: aiModelVal,
+            delivery_format: deliveryVal,
+            skill_level: skillVal,
             ...(item.isConciergeService && { is_concierge_service: true }),
           },
         },

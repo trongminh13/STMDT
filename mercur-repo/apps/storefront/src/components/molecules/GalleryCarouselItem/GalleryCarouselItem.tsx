@@ -1,5 +1,5 @@
 import { SingleProductImage } from "@/types/product"
-import Image from "next/image"
+import { SafeImage } from "@/components/atoms"
 
 export const GalleryCarouselItem = ({
   image,
@@ -7,12 +7,13 @@ export const GalleryCarouselItem = ({
   image: SingleProductImage
 }) => {
   return (
-    <Image
+    <SafeImage
       key={image.id}
       src={decodeURIComponent(image.url)}
-      alt={image.alt}
+      alt={image.alt || "Product image"}
       width={700}
       height={700}
+      className="w-full h-full object-contain aspect-square"
     />
   )
 }

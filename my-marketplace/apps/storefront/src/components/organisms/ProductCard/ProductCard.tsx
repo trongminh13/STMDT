@@ -1,7 +1,6 @@
 "use client"
 
-import Image from "next/image"
-import { Button } from "@/components/atoms"
+import { Button, SafeImage } from "@/components/atoms"
 import { HttpTypes } from "@medusajs/types"
 import { cn } from "@/lib/utils"
 import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
@@ -40,39 +39,27 @@ export const ProductCard = ({
           data-testid="product-card-link"
         >
           <div className="overflow-hidden rounded-sm w-full h-full flex justify-center align-center ">
-            {product.thumbnail ? (
-              <Image
-                priority
-                fetchPriority="high"
-                src={decodeURIComponent(product.thumbnail)}
-                alt={`${productName} image`}
-                width={100}
-                height={100}
-                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                className="object-contain aspect-square w-full object-center h-full lg:group-hover:-mt-14 transition-all duration-300 rounded-xs"
-                data-testid="product-card-image"
-              />
-            ) : (
-              <Image
-                priority
-                fetchPriority="high"
-                src="/images/placeholder.svg"
-                alt={`${productName} image placeholder`}
-                width={100}
-                height={100}
-                sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
-                data-testid="product-card-placeholder-image"
-              />
-            )}
+            <SafeImage
+              priority
+              fetchPriority="high"
+              src={product.thumbnail ? decodeURIComponent(product.thumbnail) : ""}
+              alt={`${productName} image`}
+              fallbackCategory={(product as any).categories?.[0]?.name || (product as any).categories?.[0]?.handle || ""}
+              width={100}
+              height={100}
+              sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+              className="object-contain aspect-square w-full object-center h-full lg:group-hover:-mt-14 transition-all duration-300 rounded-xs"
+              data-testid="product-card-image"
+            />
           </div>
         </LocalizedClientLink>
         <LocalizedClientLink
           href={`/products/${product.handle}`}
-          aria-label={`See more about ${productName}`}
-          title={`See more about ${productName}`}
+          aria-label={`Xem chi tiết ${productName}`}
+          title={`Xem chi tiết ${productName}`}
         >
           <Button className="absolute rounded-sm bg-action text-action-on-primary h-auto lg:h-[48px] lg:group-hover:block hidden w-full uppercase bottom-1 z-10" data-testid="product-card-see-more-button">
-            See More
+            XEM CHI TIẾT
           </Button>
         </LocalizedClientLink>
       </div>

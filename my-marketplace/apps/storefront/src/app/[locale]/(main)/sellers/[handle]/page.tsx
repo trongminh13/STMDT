@@ -70,16 +70,16 @@ export default async function SellerPage({
   searchParams,
 }: {
   params: Promise<{ handle: string; locale: string }>
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; tab?: string }>
 }) {
   const { handle, locale } = await params
-  const { page } = await searchParams
+  const { page, tab: requestedTab } = await searchParams
 
   const seller = (await getSellerByHandle(handle)) as SellerDTO
 
   const user = await retrieveCustomer()
 
-  const tab = "offers"
+  const tab = requestedTab === "reviews" ? "reviews" : "offers"
 
   if (!seller) {
     return null

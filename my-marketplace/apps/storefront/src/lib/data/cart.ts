@@ -371,18 +371,23 @@ export async function setAddresses(currentState: unknown, formData: FormData) {
       throw new Error('No existing cart found when setting addresses');
     }
 
+    const rawAddress1 = formData.get('shipping_address.address_1') as string;
+    const rawCity = formData.get('shipping_address.city') as string;
+    const rawPostalCode = formData.get('shipping_address.postal_code') as string;
+    const rawCountryCode = formData.get('shipping_address.country_code') as string;
+
     const data = {
       shipping_address: {
         first_name: formData.get('shipping_address.first_name'),
         last_name: formData.get('shipping_address.last_name'),
-        address_1: formData.get('shipping_address.address_1'),
+        address_1: rawAddress1?.trim() || 'Trực tuyến / Kỹ thuật số',
         address_2: '',
-        company: formData.get('shipping_address.company'),
-        postal_code: formData.get('shipping_address.postal_code'),
-        city: formData.get('shipping_address.city'),
-        country_code: formData.get('shipping_address.country_code'),
-        province: formData.get('shipping_address.province'),
-        phone: formData.get('shipping_address.phone')
+        company: formData.get('shipping_address.company') || '',
+        postal_code: rawPostalCode?.trim() || '100000',
+        city: rawCity?.trim() || 'Hà Nội',
+        country_code: (rawCountryCode?.trim() || 'vn').toLowerCase(),
+        province: formData.get('shipping_address.province') || '',
+        phone: formData.get('shipping_address.phone') || ''
       },
       email: formData.get('email')
     } as any;

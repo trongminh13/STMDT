@@ -94,7 +94,11 @@ async function Collection({
 
   const breadcrumbsItems = [
     {
-      path: collection.handle,
+      path: "/categories",
+      label: "Tất cả sản phẩm",
+    },
+    {
+      path: `/collections/${collection.handle}`,
       label: collection.title,
     },
   ]

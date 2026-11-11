@@ -2,23 +2,27 @@
 
 import { CartSummary } from '@/components/organisms';
 import { PromoCode } from '@/components/organisms/PromoCode/PromoCode';
+import { isDigitalCart } from '@/lib/helpers/digital-cart';
 
 import { CartItems } from './CartItems';
 import PaymentButton from './PaymentButton';
 
 const Review = ({ cart }: { cart: any }) => {
+  const isDigital = isDigitalCart(cart);
   const paidByGiftcard = cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0;
 
   // Every seller in the cart must have a shipping method. The backend enforces
   // one method per seller, so covering each seller means one method per seller.
+  // Digital products on Sàn Đại Việt AI do not require physical delivery.
   const cartSellerCount = new Set(
     (cart?.items ?? [])
       .map((item: any) => item.offer?.seller_id)
       .filter(Boolean)
   ).size;
   const allSellersHaveShipping =
-    cart.shipping_methods.length > 0 &&
-    cart.shipping_methods.length >= cartSellerCount;
+    isDigital ||
+    (cart.shipping_methods?.length > 0 &&
+      cart.shipping_methods.length >= cartSellerCount);
 
   const previousStepsCompleted =
     cart.shipping_address &&

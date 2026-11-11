@@ -1,5 +1,6 @@
 import { Accordion } from './Accordion/Accordion';
 import { AddressForm } from './AddressForm/AddressForm';
+import { CartDropdownItem } from './CartDropdownItem/CartDropdownItem';
 import { CategoryNavbar } from './CategoryNavbar/CategoryNavbar';
 import { DeleteCartItemButton } from './DeleteCartItemButton/DeleteCartItemButton';
 import { Dropdown } from './Dropdown/Dropdown';
@@ -35,6 +36,8 @@ import { SellerScore } from './SellerScore/SellerScore';
 import { TabsContent } from './TabsContent/TabsContent';
 import { TabsList } from './TabsList/TabsList';
 import { UserNavigation } from './UserNavigation/UserNavigation';
+import { ReviewModal } from './ReviewModal/ReviewModal';
+import { ReviewButton } from './ReviewButton/ReviewButton';
 
 export {
   PrimeCategoryNavbar,
@@ -65,6 +68,7 @@ export {
   HeaderCategoryNavbar,
   DeleteCartItemButton,
   Dropdown,
+  CartDropdownItem,
   LoginForm,
   RegisterForm,
   UserNavigation,
@@ -73,5 +77,7 @@ export {
   ProfileDetails,
   ProductListingLoadingView,
   ProductListingNoResultsView,
-  ProductListingProductsView
+  ProductListingProductsView,
+  ReviewModal,
+  ReviewButton
 };

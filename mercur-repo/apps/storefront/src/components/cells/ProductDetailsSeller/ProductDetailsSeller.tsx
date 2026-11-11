@@ -1,4 +1,4 @@
-import { SellerInfo } from '@/components/molecules/SellerInfo/SellerInfo';
+import { SellerInfo } from "@/components/molecules"
 import { SellerDTO } from "@mercurjs/types"
 
 export const ProductDetailsSeller = ({ seller }: { seller?: SellerDTO }) => {
@@ -8,7 +8,7 @@ export const ProductDetailsSeller = ({ seller }: { seller?: SellerDTO }) => {
     <div className="border rounded-sm">
       <div>
           <div className="flex justify-between">
-            <SellerInfo seller={seller} showArrow bottomBorder showReviews={false} />
+            <SellerInfo seller={seller} showArrow bottomBorder showReviews={true} />
           </div>
       </div>
     </div>

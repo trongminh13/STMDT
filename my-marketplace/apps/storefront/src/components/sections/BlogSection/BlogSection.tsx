@@ -33,16 +33,13 @@ export const blogPosts: BlogPost[] = [
 
 export function BlogSection() {
   return (
-    <section className='bg-primary container mx-auto px-4 lg:px-8 w-full'>
-      <div className='flex flex-col mb-8'>
-        <h2 className='heading-lg text-primary uppercase'>
+    <section className='bg-tertiary container'>
+      <div className='flex items-center justify-between mb-12'>
+        <h2 className='heading-lg text-tertiary uppercase'>
           CẨM NANG &amp; TRI THỨC TRIỂN KHAI AI
         </h2>
-        <p className='text-secondary text-sm md:text-base mt-1'>
-          Các bài viết hướng dẫn thực chiến, phân tích kiến trúc hệ thống và cẩm nang vận hành doanh nghiệp số.
-        </p>
       </div>
-      <div className='grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6'>
+      <div className='grid grid-cols-1 lg:grid-cols-3'>
         {blogPosts.map((post, index) => (
           <BlogCard
             key={post.id}

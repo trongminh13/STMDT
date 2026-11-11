@@ -1,9 +1,11 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   cacheComponents: true,
   partialPrefetching: true,
   output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   trailingSlash: false,
   reactStrictMode: true,
   logging: {
@@ -15,7 +17,7 @@ const nextConfig: NextConfig = {
     // The local Medusa backend serves uploads from localhost, which Next 16 blocks by default.
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {

@@ -1,5 +1,5 @@
 import { HttpTypes } from '@medusajs/types';
-import Image from 'next/image';
+import { SafeImage } from '@/components/atoms';
 
 import { DeleteCartItemButton } from '@/components/molecules';
 import LocalizedClientLink from '@/components/molecules/LocalizedLink/LocalizedLink';
@@ -37,24 +37,14 @@ export const CartItemsProducts = ({
             className="flex gap-2 rounded-sm border p-1"
           >
             <LocalizedClientLink href={`/products/${product.product_handle}`}>
-              <div className="w-[100px] h-[132px] flex items-center justify-center" data-testid="cart-item-image">
-                {product.thumbnail ? (
-                  <Image
-                    src={decodeURIComponent(product.thumbnail)}
-                    alt="Product thumbnail"
-                    width={100}
-                    height={132}
-                    className="h-[132px] w-[100px] rounded-xs object-contain"
-                  />
-                ) : (
-                  <Image
-                    src={'/images/placeholder.svg'}
-                    alt="Product thumbnail"
-                    width={50}
-                    height={66}
-                    className="h-[66px] w-[50px] rounded-xs object-contain opacity-30"
-                  />
-                )}
+              <div className="w-[100px] h-[132px] flex items-center justify-center overflow-hidden rounded-xs" data-testid="cart-item-image">
+                <SafeImage
+                  src={product.thumbnail ? decodeURIComponent(product.thumbnail) : ""}
+                  alt={product.title || "Product thumbnail"}
+                  width={100}
+                  height={132}
+                  className="h-[132px] w-[100px] rounded-xs object-contain"
+                />
               </div>
             </LocalizedClientLink>
 

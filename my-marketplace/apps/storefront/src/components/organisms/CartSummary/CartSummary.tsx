@@ -31,11 +31,13 @@ export const CartSummary = ({
         </div>
         <div className="flex justify-between" data-testid="cart-summary-delivery">
           <span>Delivery:</span>
-          <span className="text-primary">
-            {convertToLocale({
-              amount: shipping_total,
-              currency_code,
-            })}
+          <span className="text-primary font-medium">
+            {shipping_total === 0
+              ? '0 ₫ (Bàn giao trực tuyến)'
+              : convertToLocale({
+                  amount: shipping_total,
+                  currency_code,
+                })}
           </span>
         </div>
         <div className="flex justify-between" data-testid="cart-summary-tax">

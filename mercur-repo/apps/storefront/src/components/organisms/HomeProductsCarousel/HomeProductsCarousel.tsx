@@ -1,44 +1,46 @@
-import { CustomCarousel as Carousel } from '@/components/cells/Carousel/Carousel';
+import { Carousel } from "@/components/cells"
 import { ProductCard } from "../ProductCard/ProductCard"
 import { listProducts } from "@/lib/data/products"
 import { Product } from "@/types/product"
+import { HttpTypes } from "@medusajs/types"
 
 export const HomeProductsCarousel = async ({
   locale,
-  sellerProducts,
-  home,
+  sellerProducts = [],
+  home = false,
 }: {
   locale: string
-  sellerProducts: Product[]
-  home: boolean
+  sellerProducts?: (Product | HttpTypes.StoreProduct)[]
+  home?: boolean
 }) => {
-  const {
-    response: { products },
-  } = await listProducts({
-    countryCode: locale,
-    queryParams: {
-      limit: home ? 4 : undefined,
-      order: "created_at",
-      handle: home
-        ? undefined
-        : sellerProducts.map((product) => product.handle),
-    },
-  })
+  // Nếu sellerProducts đã được truyền vào trực tiếp: Render ngay, không gọi lại API thừa thãi
+  let displayProducts = sellerProducts
 
-  if (!products.length && !sellerProducts.length) return null
+  if (!displayProducts || displayProducts.length === 0) {
+    const {
+      response: { products },
+    } = await listProducts({
+      countryCode: locale,
+      queryParams: {
+        limit: home ? 4 : 8,
+        order: "created_at",
+      },
+    }).catch(() => ({ response: { products: [] } }))
+    displayProducts = products
+  }
+
+  if (!displayProducts || !displayProducts.length) return null
 
   return (
     <div className="flex justify-center w-full">
       <Carousel
         align="start"
-        items={(sellerProducts.length ? sellerProducts : products).map(
-          (product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-            />
-          )
-        )}
+        items={displayProducts.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product as any}
+          />
+        ))}
       />
     </div>
   )

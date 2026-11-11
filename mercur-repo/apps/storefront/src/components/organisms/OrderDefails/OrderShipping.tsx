@@ -47,14 +47,20 @@ const OrderShipping = ({ order }: ShippingDetailsProps) => {
           Delivery method
         </Text>
         <Text className="txt-medium text-ui-fg-subtle">
-          {(order as any).shipping_methods[0]?.name} (
-          {convertToLocale({
-            amount: order.shipping_methods?.[0].total ?? 0,
-            currency_code: order.currency_code,
-          })
-            .replace(/,/g, "")
-            .replace(/\./g, ",")}
-          )
+          {(order as any).shipping_methods?.[0]?.name ? (
+            <>
+              {(order as any).shipping_methods[0].name} (
+              {convertToLocale({
+                amount: order.shipping_methods?.[0].total ?? 0,
+                currency_code: order.currency_code,
+              })
+                .replace(/,/g, "")
+                .replace(/\./g, ",")}
+              )
+            </>
+          ) : (
+            "Bàn giao kỹ thuật số tức thì qua Cloudflare R2 & Zalo OA (0 ₫)"
+          )}
         </Text>
       </div>
       <div className="mt-4">

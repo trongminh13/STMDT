@@ -23,6 +23,7 @@ import { ProductDetails } from "./ProductDetails/ProductDetails"
 import { CompareOffersModal } from "./CompareOffersModal/CompareOffersModal"
 import { Addresses } from "./Addressess/Addresses"
 import { CartEmpty } from "./CartEmpty/CartEmpty"
+import { DigitalAssetDelivery } from "./DigitalAssetDelivery/DigitalAssetDelivery"
 
 export {
   ProductCard,
@@ -49,5 +50,6 @@ export {
   CompareOffersModal,
   Addresses,
   CartEmpty,
+  DigitalAssetDelivery,
   OfferCard,
 }

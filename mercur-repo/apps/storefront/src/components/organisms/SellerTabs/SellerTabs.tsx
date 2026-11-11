@@ -1,10 +1,10 @@
 import { Suspense } from "react"
 import { ProductListingSkeleton } from "../ProductListingSkeleton/ProductListingSkeleton"
-import { SellerOffersListing } from '@/components/sections/SellerOffersListing/SellerOffersListing';
-import { TabsContent } from '@/components/molecules/TabsContent/TabsContent';
-import { TabsList } from '@/components/molecules/TabsList/TabsList';
+import { SellerOffersListing } from "@/components/sections"
+import { SellerReviewList, TabsContent, TabsList } from "@/components/molecules"
+import { getSellerReviews } from "@/lib/data/reviews"
 
-export const SellerTabs = ({
+export const SellerTabs = async ({
   tab,
   seller_handle,
   seller_id,
@@ -18,8 +18,11 @@ export const SellerTabs = ({
   page?: number
 }) => {
   const tabsList = [
-    { label: "Offers", link: `/sellers/${seller_handle}/` },
+    { label: "Giải pháp / Sản phẩm", link: `/sellers/${seller_handle}` },
+    { label: "Đánh giá & Uy tín", link: `/sellers/${seller_handle}?tab=reviews` },
   ]
+
+  const { reviews } = await getSellerReviews(seller_id)
 
   return (
     <div className="mt-8">
@@ -31,6 +34,14 @@ export const SellerTabs = ({
         >
           <SellerOffersListing seller_id={seller_id} locale={locale} page={page} />
         </Suspense>
+      </TabsContent>
+      <TabsContent value="reviews" activeTab={tab}>
+        <div className="p-6 bg-white dark:bg-[#18181b] border border-neutral-200 dark:border-neutral-800 rounded-[8px]">
+          <h4 className="heading-sm uppercase font-bold mb-4 text-[#18181B] dark:text-white">
+            Nhận xét từ người mua ({reviews?.length || 0})
+          </h4>
+          <SellerReviewList reviews={reviews} />
+        </div>
       </TabsContent>
     </div>
   )

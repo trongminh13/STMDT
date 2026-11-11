@@ -324,10 +324,48 @@ export default async function seedDemoData({ container }: ExecArgs) {
   ];
   const CONDITION_VALUES = ["New", "Like New", "Used"];
 
+  const AI_PLATFORM_VALUES = [
+    "n8n",
+    "Dify",
+    "Make.com",
+    "Next.js 15",
+    "Python / FastAPI",
+    "Docker",
+    "Chrome Extension",
+  ];
+
+  const AI_MODEL_VALUES = [
+    "DeepSeek-V3 / R1",
+    "OpenAI (GPT-4o)",
+    "Anthropic (Claude 3.5)",
+    "Gemini 2.0",
+    "Ollama / Local LLM",
+    "Không dùng AI",
+  ];
+
+  const DELIVERY_FORMAT_VALUES = [
+    "JSON Workflow File",
+    "Full Source Code ZIP",
+    "Dify DSL File",
+    "Chrome Extension ZIP",
+    "Prompt & Dataset",
+    "Dịch vụ Cài đặt 1-1",
+  ];
+
+  const SKILL_LEVEL_VALUES = [
+    "Mì ăn liền (< 5 phút)",
+    "Cơ bản (Cần API Key)",
+    "Nâng cao (Cần Dev/Docker)",
+  ];
+
   const ATTRIBUTE_DEFS = [
     { name: "Size", handle: "size", values: FOOTWEAR_SIZES },
     { name: "Color", handle: "color", values: COLOR_VALUES },
     { name: "Condition", handle: "condition", values: CONDITION_VALUES },
+    { name: "Nền tảng & Runtime", handle: "platform", values: AI_PLATFORM_VALUES },
+    { name: "Mô hình AI hỗ trợ", handle: "ai_model", values: AI_MODEL_VALUES },
+    { name: "Hình thức bàn giao", handle: "delivery_format", values: DELIVERY_FORMAT_VALUES },
+    { name: "Mức độ phức tạp", handle: "skill_level", values: SKILL_LEVEL_VALUES },
   ];
 
   type SeededAttribute = {

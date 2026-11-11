@@ -2,9 +2,8 @@
 
 import { Input } from "@/components/atoms"
 import { SearchIcon } from "@/icons"
-import { useSearchParams } from "next/navigation"
+import { useParams, useRouter, useSearchParams } from "next/navigation"
 import { useState } from "react"
-import { redirect } from "next/navigation"
 import clsx from "clsx"
 
 interface Props {
@@ -13,14 +12,21 @@ interface Props {
 
 export const NavbarSearch = ({ className }: Props) => {
   const searchParams = useSearchParams()
+  const params = useParams()
+  const router = useRouter()
+  const locale =
+    (params?.locale as string) ||
+    process.env.NEXT_PUBLIC_DEFAULT_REGION ||
+    "vn"
 
   const [search, setSearch] = useState(searchParams.get("query") || "")
 
   const handleSearch = () => {
-    if (search) {
-      redirect(`/categories?query=${search}`)
+    const trimmed = search.trim()
+    if (trimmed) {
+      router.push(`/${locale}/categories?query=${encodeURIComponent(trimmed)}`)
     } else {
-      redirect(`/categories`)
+      router.push(`/${locale}/categories`)
     }
   }
 
@@ -35,7 +41,7 @@ export const NavbarSearch = ({ className }: Props) => {
         icon={<SearchIcon />}
         onIconClick={handleSearch}
         iconAriaLabel="Search"
-        placeholder="Search product"
+        placeholder="Tìm kiếm giải pháp AI, workflows, mã nguồn..."
         value={search}
         changeValue={setSearch}
         type="search"

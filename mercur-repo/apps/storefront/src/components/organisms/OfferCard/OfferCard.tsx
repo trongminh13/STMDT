@@ -1,8 +1,6 @@
 "use client"
 
-import Image from "next/image"
-
-import { Button } from '@/components/atoms/Button/Button';
+import { Button, SafeImage } from "@/components/atoms"
 import { toast } from "@/lib/helpers/toast"
 import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
 import { useCartContext } from "@/components/providers"
@@ -94,10 +92,10 @@ export const OfferCard = ({
           data-testid="offer-card-link"
         >
           <div className="overflow-hidden rounded-sm w-full h-full flex justify-center align-center">
-            <Image
+            <SafeImage
               priority
               fetchPriority="high"
-              src={product?.thumbnail ? decodeURIComponent(product.thumbnail) : "/images/placeholder.svg"}
+              src={product?.thumbnail ? decodeURIComponent(product.thumbnail) : ""}
               alt={`${productName} image`}
               width={100}
               height={100}

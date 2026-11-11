@@ -17,5 +17,5 @@ export function LocaleProvider({ children, locale }: PropsWithChildren<{ locale:
 // Reading the locale from the [locale] layout instead of useParams() keeps links
 // out of Suspense, so they render in every route's static shell.
 export function useLocale() {
-  return useContext(LocaleContext) || process.env.NEXT_PUBLIC_DEFAULT_REGION || "us"
+  return useContext(LocaleContext) || process.env.NEXT_PUBLIC_DEFAULT_REGION || "vn"
 }

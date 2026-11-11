@@ -33,9 +33,9 @@ export async function generateMetadata({
     locales,
   })
 
-  const title = "All Products"
-  const description = `Browse all products on ${
-    process.env.NEXT_PUBLIC_SITE_NAME || "our store"
+  const title = "Tất cả sản phẩm"
+  const description = `Khám phá toàn bộ giải pháp AI, workflows và mã nguồn trên ${
+    process.env.NEXT_PUBLIC_SITE_NAME || "Đại Việt AI"
   }`
 
   return {
@@ -64,8 +64,8 @@ export default async function AllCategories({
 
   const breadcrumbsItems = [
     {
-      path: "/",
-      label: "All Products",
+      path: "/categories",
+      label: "Tất cả sản phẩm",
     },
   ]
 
@@ -95,7 +95,7 @@ export default async function AllCategories({
               {
                 "@type": "ListItem",
                 position: 1,
-                name: "All Products",
+                name: "Tất cả sản phẩm",
                 item: `${baseUrl}/${locale}/categories`,
               },
             ],
@@ -117,7 +117,7 @@ export default async function AllCategories({
         <Breadcrumbs items={breadcrumbsItems} />
       </div>
 
-      <h1 className="heading-xl uppercase">All Products</h1>
+      <h1 className="heading-xl uppercase">Tất cả sản phẩm</h1>
 
       <SearchProductsListing locale={locale} searchParams={searchParams} />
     </main>

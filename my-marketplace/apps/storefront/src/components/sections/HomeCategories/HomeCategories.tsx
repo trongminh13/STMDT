@@ -36,20 +36,15 @@ export const categories: { id: number; name: string; handle: string; image?: str
 
 export const HomeCategories = async ({ heading }: { heading: string }) => {
   return (
-    <section className="bg-primary w-full py-8">
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="mb-6 flex flex-col">
-          <h2 className="heading-lg text-primary uppercase">{heading}</h2>
-          <p className="text-secondary text-sm md:text-base mt-1">
-            Khám phá 5 nhóm giải pháp hàng số và AI thực chiến được phân loại theo chuẩn Product Taxonomy 1.0.
-          </p>
-        </div>
-        <Carousel
-          items={categories?.map((category) => (
-            <CategoryCard key={category.id} category={category} />
-          ))}
-        />
+    <section className="bg-primary py-8 w-full">
+      <div className="mb-6">
+        <h2 className="heading-lg text-primary uppercase">{heading}</h2>
       </div>
+      <Carousel
+        items={categories?.map((category) => (
+          <CategoryCard key={category.id} category={category} />
+        ))}
+      />
     </section>
   )
 }

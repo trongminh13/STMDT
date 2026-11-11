@@ -1,21 +1,21 @@
 const links = {
   customerServices: [
-    { label: 'FAQs', path: '#' },
-    { label: 'Track Order', path: '#' },
-    { label: 'Returns', path: '#' },
-    { label: 'Delivery', path: '#' },
-    { label: 'Payment', path: '#' },
+    { label: 'Quy chế giao dịch & Bảo hành T+3', path: '/refund-policy' },
+    { label: 'Kiểm tra đơn & Tải tài sản số', path: '/user/orders' },
+    { label: 'Điều khoản dịch vụ sàn', path: '/terms' },
+    { label: 'Thanh toán tự động VietQR & payOS', path: '/terms' },
+    { label: 'Hỗ trợ kỹ thuật Zalo OA 1-1', path: 'https://zalo.me/daivietai' },
   ],
   about: [
-    { label: 'About us', path: '#' },
-    { label: 'Blog', path: '#' },
-    { label: 'Privacy Policy', path: '#' },
-    { label: 'Terms & Conditions', path: '#' },
+    { label: 'Về Đại Việt AI (Sứ mệnh & Landing Page)', path: '/landing' },
+    { label: 'Chính sách bảo vệ dữ liệu cá nhân', path: '/privacy' },
+    { label: 'Quy chế kiểm duyệt sản phẩm AI', path: '/creator-policy' },
+    { label: 'Quy trình Notice-and-Takedown 24h', path: '/creator-policy' },
   ],
   connect: [
-    { label: 'Facebook', path: 'https://facebook.com' },
-    { label: 'Instagram', path: 'https://instagram.com' },
-    { label: 'LinekdIn', path: 'https://linkedin.com' },
+    { label: 'Zalo Official Account', path: 'https://zalo.me/daivietai' },
+    { label: 'Kênh hỗ trợ Telegram', path: 'https://t.me/daiviet_ai_support' },
+    { label: 'Cổng thông tin Creator', path: process.env.NEXT_PUBLIC_VENDOR_URL || 'http://localhost:7001' },
   ],
 };
 

@@ -17,7 +17,7 @@ export const SellerHeading = ({
     <div className="border-b">
       <div className="flex flex-col md:flex-row justify-between">
         <div>
-          <SellerInfo header={header} seller={seller} />
+          <SellerInfo header={header} seller={seller} showReviews={true} />
         </div>
         {user && (
           <div className="flex gap-2 md:mt-0 p-5 md:ml-auto">

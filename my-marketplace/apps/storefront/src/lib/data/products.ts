@@ -9,9 +9,10 @@ import { sdk } from '../client';
 import { getAuthHeaders } from './cookies';
 import { CACHE_TAGS, getGlobalCacheOptions } from './cache-tags';
 import { getRegion, retrieveRegion } from './regions';
+import { filterFallbackAiProducts, FALLBACK_AI_PRODUCTS } from './fallback-ai-products';
 
 const PRODUCT_LIST_FIELDS =
-  '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute';
+  '*variants.calculated_price,+variants.inventory_quantity,*variants.options,*attribute_values,*attribute_values.attribute,*categories';
 
 export type SearchFacetBucket = { value: string; count: number };
 
@@ -115,6 +116,20 @@ export const listProducts = async ({
     } as never) as unknown as Promise<{ products: HttpTypes.StoreProduct[]; count: number }>
   )
     .then(({ products, count }) => {
+      if (count === 0 && (!products || products.length === 0)) {
+        const fallback = filterFallbackAiProducts({
+          handle: queryParams?.handle,
+          category_id,
+          limit,
+          page: pageParam,
+        });
+        return {
+          response: { products: fallback.products, count: fallback.count },
+          nextPage: fallback.nextPage,
+          queryParams,
+        };
+      }
+
       const nextPage = count > offset + limit ? pageParam + 1 : null;
 
       return {
@@ -123,11 +138,19 @@ export const listProducts = async ({
         queryParams,
       };
     })
-    .catch(() => ({
-      response: { products: [], count: 0 },
-      nextPage: null,
-      queryParams,
-    }));
+    .catch(() => {
+      const fallback = filterFallbackAiProducts({
+        handle: queryParams?.handle,
+        category_id,
+        limit,
+        page: pageParam,
+      });
+      return {
+        response: { products: fallback.products, count: fallback.count },
+        nextPage: fallback.nextPage,
+        queryParams,
+      };
+    });
 };
 
 export const listProductsWithSort = async ({
@@ -195,7 +218,16 @@ export const getProductByHandle = async (handle: string, regionId: string) => {
         next,
       },
     } as never) as unknown as Promise<{ products: HttpTypes.StoreProduct[] }>
-  ).then(({ products }) => products[0]);
+  )
+    .then(({ products }) => {
+      if (!products || products.length === 0) {
+        return FALLBACK_AI_PRODUCTS.find((p) => p.handle === handle) || null;
+      }
+      return products[0];
+    })
+    .catch(() => {
+      return FALLBACK_AI_PRODUCTS.find((p) => p.handle === handle) || null;
+    });
 };
 
 /**
@@ -261,6 +293,18 @@ export const searchProducts = async ({
     count: 0,
   }));
 
+  // Fallback to local AI products catalog if backend is offline or has no products
+  if (count === 0 && (!products || products.length === 0)) {
+    return filterFallbackAiProducts({
+      query,
+      category_id,
+      attributes,
+      sortBy,
+      page,
+      limit,
+    });
+  }
+
   const ordered =
     sortBy === 'price_asc' || sortBy === 'price_desc'
       ? sortProducts(products, sortBy)
@@ -269,4 +313,74 @@ export const searchProducts = async ({
   const nextPage = count > offset + limit ? page + 1 : null;
 
   return { products: ordered, count, nextPage };
+};
+
+/**
+ * Lấy danh sách sản phẩm tương tự phục vụ trang Chi tiết sản phẩm.
+ * Ưu tiên: Cùng Category -> Cùng nền tảng AI -> Loại trừ chính sản phẩm đang xem -> Fallback thông minh.
+ */
+export const getSimilarProducts = async ({
+  productId,
+  productHandle,
+  categoryIds,
+  countryCode,
+  limit = 4,
+}: {
+  productId: string;
+  productHandle?: string;
+  categoryIds?: string[];
+  countryCode: string;
+  limit?: number;
+}): Promise<HttpTypes.StoreProduct[]> => {
+  let similar: HttpTypes.StoreProduct[] = [];
+
+  // 1. Thử lấy sản phẩm trong cùng category từ Backend Medusa
+  if (categoryIds && categoryIds.length > 0) {
+    const { response } = await listProducts({
+      countryCode,
+      category_id: categoryIds,
+      queryParams: { limit: limit + 2 },
+    }).catch(() => ({ response: { products: [] } }));
+
+    similar = (response.products || []).filter(
+      (p) => p.id !== productId && p.handle !== productHandle
+    );
+  }
+
+  // 2. Nếu cùng category chưa đủ `limit` sản phẩm, bổ sung thêm các sản phẩm nổi bật khác
+  if (similar.length < limit) {
+    const { response } = await listProducts({
+      countryCode,
+      queryParams: { limit: limit + 4 },
+    }).catch(() => ({ response: { products: [] } }));
+
+    const additional = (response.products || []).filter(
+      (p) =>
+        p.id !== productId &&
+        p.handle !== productHandle &&
+        !similar.some((s) => s.id === p.id)
+    );
+    similar = [...similar, ...additional].slice(0, limit);
+  }
+
+  // 3. Fallback: Nếu Backend offline hoặc không có sản phẩm nào
+  if (similar.length === 0) {
+    const fallbackList = FALLBACK_AI_PRODUCTS.filter(
+      (p) => p.id !== productId && p.handle !== productHandle
+    );
+
+    const sameCat = fallbackList.filter((p) =>
+      p.categories?.some(
+        (c) =>
+          categoryIds?.includes(c.id) ||
+          (c.handle && categoryIds?.includes(c.handle))
+      )
+    );
+    const otherCat = fallbackList.filter(
+      (p) => !sameCat.some((s) => s.id === p.id)
+    );
+    similar = [...sameCat, ...otherCat].slice(0, limit);
+  }
+
+  return similar.slice(0, limit);
 };

@@ -36,11 +36,11 @@ export const CartDrawer = () => {
           data-testid="cart-drawer"
         >
           <div className="flex items-center justify-between border-b px-4 py-4">
-            <DialogTitle className="heading-md uppercase">Cart</DialogTitle>
+            <DialogTitle className="heading-md uppercase">Giỏ hàng</DialogTitle>
             <button
               type="button"
               onClick={closeDrawer}
-              aria-label="Close cart"
+              aria-label="Đóng giỏ hàng"
               className="flex h-8 w-8 cursor-pointer items-center justify-center"
               data-testid="cart-drawer-close"
             >
@@ -79,10 +79,10 @@ const CartDrawerContent = () => {
         className="flex flex-1 flex-col items-center justify-center gap-6 px-8 text-center"
         data-testid="cart-drawer-empty"
       >
-        <h3 className="heading-md uppercase">Your cart is empty</h3>
+        <h3 className="heading-md uppercase">Giỏ hàng trống</h3>
         <LocalizedClientLink href="/categories" onClick={closeDrawer}>
           <Button className="px-8 py-3" data-testid="cart-drawer-continue-shopping">
-            Continue shopping
+            Tiếp tục khám phá
           </Button>
         </LocalizedClientLink>
       </div>
@@ -107,10 +107,10 @@ const CartDrawerContent = () => {
       <footer className="flex flex-col gap-4 border-t px-4 py-4">
         <div aria-busy={isUpdating || undefined} className="flex flex-col gap-1">
           <div className="flex items-baseline justify-between">
-            <span className="label-lg">Subtotal</span>
+            <span className="label-lg">Tạm tính</span>
             {isUpdating ? (
               <span className="label-lg text-secondary" data-testid="cart-drawer-total-updating">
-                Updating…
+                Đang cập nhật…
               </span>
             ) : (
               <span className="heading-sm" data-testid="cart-drawer-total">
@@ -122,17 +122,17 @@ const CartDrawerContent = () => {
             )}
           </div>
           <p className="label-sm text-secondary">
-            Taxes and shipping calculated at checkout.
+            Thuế và phí giao dịch được tính tại bước thanh toán.
           </p>
         </div>
         {isUpdating ? (
           <Button className="w-full py-3" disabled data-testid="cart-drawer-checkout">
-            Go to checkout
+            Tiến hành thanh toán
           </Button>
         ) : (
           <LocalizedClientLink href="/checkout?step=address" onClick={closeDrawer}>
             <Button className="w-full py-3" data-testid="cart-drawer-checkout">
-              Go to checkout
+              Tiến hành thanh toán
             </Button>
           </LocalizedClientLink>
         )}
@@ -142,7 +142,7 @@ const CartDrawerContent = () => {
           className="label-md text-center underline"
           data-testid="cart-drawer-view-cart"
         >
-          View cart
+          Xem giỏ hàng
         </LocalizedClientLink>
       </footer>
     </div>
@@ -211,7 +211,7 @@ const CartDrawerLine = ({
                   {title}: <span className="text-primary">{String(value)}</span>
                 </p>
               ))}
-              {sellerName && <p>Sold by {sellerName}</p>}
+              {sellerName && <p>Cung cấp bởi {sellerName}</p>}
             </div>
           </div>
           <span

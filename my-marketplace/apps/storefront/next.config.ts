@@ -1,7 +1,9 @@
 import type { NextConfig } from 'next';
+import path from 'path';
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  outputFileTracingRoot: path.join(__dirname, "../../"),
   trailingSlash: false,
   reactStrictMode: true,
   logging: {
@@ -11,7 +13,7 @@ const nextConfig: NextConfig = {
   },
   images: {
     dangerouslyAllowSVG: true,
-    contentDispositionType: 'attachment',
+    contentDispositionType: 'inline',
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
     remotePatterns: [
       {

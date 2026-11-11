@@ -22,7 +22,7 @@ export const paymentInfoMap: Record<
     icon: <CreditCard />,
   },
   pp_system_default: {
-    title: "Manual Payment",
+    title: "Chuyển khoản VietQR payOS (NAPAS 24/7)",
     icon: <Cash />,
   },
 }

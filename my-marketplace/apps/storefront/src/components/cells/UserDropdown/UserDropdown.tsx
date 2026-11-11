@@ -41,28 +41,19 @@ export const UserDropdown = ({
           <div className="p-1">
             <div className="lg:w-[200px]">
               <h3 className="uppercase heading-xs border-b p-4">
-                Your account
+                Tài khoản của bạn
               </h3>
             </div>
-            <NavigationItem href="/user/orders">Orders</NavigationItem>
-            {/* <NavigationItem href="/user/messages" className="relative">
-              Messages
-              {Boolean(unreads?.length) && (
-                <Badge className="absolute top-3 left-24 w-4 h-4 p-0">
-                  {unreads?.length}
-                </Badge>
-              )}
-            </NavigationItem>
-            <NavigationItem href="/user/returns">Returns</NavigationItem> */}
-            <NavigationItem href="/user/addresses">Addresses</NavigationItem>
+            <NavigationItem href="/user/orders">Đơn hàng của bạn</NavigationItem>
+            <NavigationItem href="/user/addresses">Sổ địa chỉ</NavigationItem>
             <Divider />
-            <NavigationItem href="/user/settings">Settings</NavigationItem>
+            <NavigationItem href="/user/settings">Cài đặt</NavigationItem>
             <LogoutButton />
           </div>
         ) : (
           <div className="p-1">
-            <NavigationItem href="/login">Login</NavigationItem>
-            <NavigationItem href="/register">Register</NavigationItem>
+            <NavigationItem href="/login">Đăng nhập</NavigationItem>
+            <NavigationItem href="/register">Đăng ký</NavigationItem>
           </div>
         )}
       </Dropdown>

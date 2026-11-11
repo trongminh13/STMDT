@@ -2,8 +2,8 @@ import { ForgotPasswordForm } from "@/components/molecules/ForgotPasswordForm/Fo
 import { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "Forgot password",
-  description: "Create a new password",
+  title: "Quên mật khẩu | Sàn Đại Việt AI",
+  description: "Khôi phục và thiết lập mật khẩu mới cho tài khoản Sàn Đại Việt AI",
   robots: { index: false, follow: false },
 }
 

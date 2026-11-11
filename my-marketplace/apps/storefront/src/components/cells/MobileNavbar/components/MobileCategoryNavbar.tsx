@@ -36,22 +36,19 @@ export const MobileCategoryNavbar = ({
     [category, categories]
   )
 
-  const filteredCategories = useMemo(
-    () =>
-      filterCategoriesByParent(
-        activeParentHandle,
-        categories,
-        parentCategories
-      ),
-    [activeParentHandle, parentCategories, categories]
-  )
+  const displayCategories = useMemo(() => {
+    if (parentCategories && parentCategories.length > 0) {
+      return parentCategories
+    }
+    return categories.filter((c) => !c.parent_category_id)
+  }, [parentCategories, categories])
 
   const handleClose = () => {
     onClose?.(false)
   }
 
   const handleCategoryClick = (categoryId: string) => {
-    const cat = filteredCategories.find((c) => c.id === categoryId)
+    const cat = displayCategories.find((c) => c.id === categoryId)
     if (cat && cat.category_children && cat.category_children.length > 0) {
       setSelectedCategory(cat)
     }
@@ -72,10 +69,10 @@ export const MobileCategoryNavbar = ({
           onClick={handleClose}
           className="label-md uppercase px-4 py-3 text-primary hover:bg-secondary/10 transition-colors"
         >
-          All Products
+          Tất cả sản phẩm
         </LocalizedClientLink>
 
-        {filteredCategories.map(({ id, handle, name, category_children }) => {
+        {displayCategories.map(({ id, handle, name, category_children }) => {
           const categoryUrl = `/categories/${handle}`
           const isActive = handle === category || handle === parentCategoryHandle
           const hasChildren = category_children && category_children.length > 0

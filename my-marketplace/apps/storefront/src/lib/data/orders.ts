@@ -204,3 +204,77 @@ export const retrieveReturnReasons = async () => {
     .then(({ return_reasons }) => return_reasons)
     .catch(err => medusaError(err));
 };
+
+export interface PayOSPaymentResponse {
+  success: boolean;
+  order_id: string;
+  payos_order_code?: number;
+  amount?: number;
+  currency?: string;
+  description?: string;
+  payment_method?: string;
+  bank_info?: {
+    bank_name: string;
+    bank_bin: string;
+    account_number: string;
+    account_name: string;
+  };
+  vietqr_url?: string;
+  webhook_url?: string;
+  payment_status?: string;
+  message?: string;
+}
+
+export const initPayOSPayment = async (orderId: string): Promise<PayOSPaymentResponse | null> => {
+  const baseUrl = process.env.MEDUSA_BACKEND_URL || 'http://localhost:9000';
+  const apiKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || '';
+
+  try {
+    const res = await fetch(`${baseUrl}/store/orders/${orderId}/payos-payment`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-publishable-api-key': apiKey,
+        ...(await getAuthHeaders()),
+      },
+      cache: 'no-cache',
+    });
+    if (!res.ok) {
+      const errData = await res.json().catch(() => null);
+      throw new Error(errData?.message || `Lỗi tạo giao dịch VietQR (${res.status})`);
+    }
+    return await res.json();
+  } catch (err) {
+    console.error(`[initPayOSPayment] Error initiating payOS payment for order ${orderId}:`, err);
+    return null;
+  }
+};
+
+export const retrieveDigitalAssets = async (
+  orderId: string,
+  action: 'inspect' | 'download' = 'inspect',
+  assetId?: string
+) => {
+  const baseUrl = process.env.MEDUSA_BACKEND_URL || 'http://localhost:9000';
+  const apiKey = process.env.NEXT_PUBLIC_MEDUSA_PUBLISHABLE_KEY || '';
+
+  try {
+    const url = new URL(`${baseUrl}/store/orders/${orderId}/digital-assets`);
+    if (action) url.searchParams.set('action', action);
+    if (assetId) url.searchParams.set('asset_id', assetId);
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        'x-publishable-api-key': apiKey,
+        ...(await getAuthHeaders()),
+      },
+      cache: 'no-cache',
+    });
+    if (!res.ok) {
+      return null;
+    }
+    return await res.json();
+  } catch (err) {
+    return null;
+  }
+};

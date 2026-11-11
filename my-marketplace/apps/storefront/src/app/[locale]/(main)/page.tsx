@@ -3,7 +3,6 @@ import {
   BlogSection,
   Hero,
   HomeCategories,
-  HomePopularBrandsSection,
   HomeProductSection,
   ShopByStyleSection,
 } from "@/components/sections"
@@ -115,7 +114,7 @@ export default async function Home({
     "Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
 
   return (
-    <main className="flex flex-col gap-10 lg:gap-16 w-full text-primary pb-16">
+    <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start text-primary">
       <link
         rel="preload"
         as="image"
@@ -148,7 +147,7 @@ export default async function Home({
         }}
       />
 
-      {/* 1. Hero Section: Khẳng định định vị Sàn Thương Mại Điện Tử Hàng Số & AI */}
+      {/* 1. Hero Section */}
       <Hero
         image="/images/hero-banner-tech.svg"
         heading="Đại Việt AI — Sàn Thương Mại Điện Tử Hàng Số & AI"
@@ -164,22 +163,23 @@ export default async function Home({
         ]}
       />
 
-      {/* 2. Trust Bar: Dải băng bảo chứng hệ sinh thái công nghệ & AI Models */}
-      <HomePopularBrandsSection />
+      {/* 2. Featured Solutions (Trending Products) */}
+      <div className="px-4 lg:px-8 w-full">
+        <HomeProductSection heading="SẢN PHẨM & GIẢI PHÁP NỔI BẬT" locale={locale} home />
+      </div>
 
-      {/* 3. Core Categories: Cây 5 nhóm giải pháp theo Product Taxonomy 1.0 */}
-      <HomeCategories heading="DANH MỤC GIẢI PHÁP AI" />
+      {/* 3. Core Categories */}
+      <div className="px-4 lg:px-8 w-full">
+        <HomeCategories heading="DANH MỤC GIẢI PHÁP AI" />
+      </div>
 
-      {/* 4. Featured Solutions: Danh sách sản phẩm AI & Workflow thực chiến nổi bật */}
-      <HomeProductSection heading="SẢN PHẨM & GIẢI PHÁP NỔI BẬT" locale={locale} home />
-
-      {/* 5. Enterprise Feature Banner: Giới thiệu giải pháp tự động hóa doanh nghiệp */}
+      {/* 4. Enterprise Feature Banner */}
       <BannerSection />
 
-      {/* 6. Solutions by Business Goal: Khám phá theo mục tiêu vận hành doanh nghiệp */}
+      {/* 5. Solutions by Business Goal */}
       <ShopByStyleSection />
 
-      {/* 7. Knowledge Hub: Cẩm nang & Tri thức triển khai thực chiến */}
+      {/* 6. Knowledge Hub */}
       <BlogSection />
     </main>
   )

@@ -1,31 +1,36 @@
 import { CustomCarousel as Carousel } from '@/components/cells/Carousel/Carousel';
 import { CategoryCard } from '@/components/organisms/CategoryCard/CategoryCard';
 
-export const categories: { id: number; name: string; handle: string }[] = [
+export const categories: { id: number; name: string; handle: string; image?: string }[] = [
   {
     id: 1,
-    name: "Sneakers",
-    handle: "sneakers",
+    name: "Tự Động Hóa & Workflow",
+    handle: "tu-dong-hoa-workflow",
+    image: "/images/categories/automation-workflow.svg",
   },
   {
     id: 2,
-    name: "Sandals",
-    handle: "sandals",
+    name: "Mã Nguồn & Boilerplates",
+    handle: "ma-nguon-boilerplates",
+    image: "/images/categories/source-code.svg",
   },
   {
     id: 3,
-    name: "Boots",
-    handle: "boots",
+    name: "Phần Mềm & Tiện Ích",
+    handle: "phan-mem-tien-ich-so",
+    image: "/images/categories/extensions-tools.svg",
   },
   {
     id: 4,
-    name: "Sport",
-    handle: "sport",
+    name: "Gói Tri Thức & Prompt AI",
+    handle: "goi-tri-thuc-prompt-ai",
+    image: "/images/categories/ai-knowledge.svg",
   },
   {
     id: 5,
-    name: "Accessories",
-    handle: "accessories",
+    name: "Dịch Vụ Cài Đặt 1-1",
+    handle: "dich-vu-cai-dat-chuyen-mon",
+    image: "/images/categories/setup-service.svg",
   },
 ]
 

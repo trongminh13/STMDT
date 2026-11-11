@@ -10,6 +10,7 @@ import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/atoms';
 import ErrorMessage from '@/components/molecules/ErrorMessage/ErrorMessage';
 import { initiatePaymentSession } from '@/lib/data/cart';
+import { isDigitalCart } from '@/lib/helpers/digital-cart';
 
 import { isStripe as isStripeFunc, paymentInfoMap } from '../../../lib/constants';
 import PaymentContainer, {
@@ -63,7 +64,10 @@ const CartPaymentSection = ({
 
   const paidByGiftcard = cart?.gift_cards && cart?.gift_cards?.length > 0 && cart?.total === 0;
 
-  const paymentReady = (activeSession && cart?.shipping_methods.length !== 0) || paidByGiftcard;
+  const isDigital = isDigitalCart(cart);
+  const paymentReady =
+    (activeSession && (isDigital || (cart?.shipping_methods && cart.shipping_methods.length !== 0))) ||
+    paidByGiftcard;
 
   const createQueryString = useCallback(
     (name: string, value: string) => {

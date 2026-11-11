@@ -21,10 +21,26 @@ const LocalizedClientLink = ({
   passHref?: true
   [x: string]: any
 }) => {
-  const locale = useLocale()
+  const locale = useLocale() || process.env.NEXT_PUBLIC_DEFAULT_REGION || "vn"
+
+  let targetPath = href || "/"
+
+  // If targetPath already has the current locale prefix, do not duplicate
+  if (targetPath.startsWith(`/${locale}/`) || targetPath === `/${locale}`) {
+    return (
+      <Link href={targetPath} {...props}>
+        {children}
+      </Link>
+    )
+  }
+
+  // Ensure targetPath starts with '/'
+  if (!targetPath.startsWith("/")) {
+    targetPath = `/${targetPath}`
+  }
 
   return (
-    <Link href={`/${locale}${href}`} {...props}>
+    <Link href={`/${locale}${targetPath}`} {...props}>
       {children}
     </Link>
   )

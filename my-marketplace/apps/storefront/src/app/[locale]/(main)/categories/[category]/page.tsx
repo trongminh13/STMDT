@@ -95,7 +95,11 @@ async function Category({
 
   const breadcrumbsItems = [
     {
-      path: categoryHandle,
+      path: "/categories",
+      label: "Tất cả sản phẩm",
+    },
+    {
+      path: `/categories/${categoryHandle}`,
       label: category.name,
     },
   ]

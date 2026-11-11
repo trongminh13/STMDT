@@ -77,7 +77,7 @@ export const ProductDetailsHeader = ({
           option.value
         )
       )
-    )?.id || ""
+    )?.id || cheapestVariant?.id || product.variants?.[0]?.id || ""
 
   const { variantPrice } = getProductPrice({
     product,
@@ -101,7 +101,7 @@ export const ProductDetailsHeader = ({
 
   const displayPrice = hasOffer
     ? convertToLocale({ amount: offerAmount as number, currency_code: offerCurrency })
-    : variantPrice?.calculated_price
+    : variantPrice?.calculated_price || cheapestPrice?.calculated_price
 
   const quantityInCart =
     cart?.items?.find((item) => item.metadata?.offer_id === winnerOffer?.id)
@@ -162,9 +162,9 @@ export const ProductDetailsHeader = ({
               <span className="heading-md text-primary" data-testid="product-price-current">
                 {displayPrice}
               </span>
-            ) : hasAnyPrice && variantPrice ? (
+            ) : hasAnyPrice && (variantPrice || cheapestPrice) ? (
               <span className="heading-md text-primary" data-testid="product-price-current">
-                {variantPrice.calculated_price}
+                {variantPrice?.calculated_price || cheapestPrice?.calculated_price}
               </span>
             ) : (
               <span className="label-md text-secondary pt-2 pb-4" data-testid="product-price-unavailable">
@@ -222,10 +222,10 @@ export const ProductDetailsHeader = ({
         data-testid="product-add-to-cart-button"
       >
         {!hasOffer
-          ? "NOT AVAILABLE"
+          ? "CHƯA MỞ BÁN"
           : offerStock
-          ? "ADD TO CART"
-          : "OUT OF STOCK"}
+          ? "THÊM VÀO GIỎ HÀNG"
+          : "TẠM HẾT LƯỢT TẢI"}
       </Button>
       </div>
       {otherOffersCount > 0 && (
@@ -235,7 +235,7 @@ export const ProductDetailsHeader = ({
           className="w-full uppercase mb-4"
           data-testid="compare-offers-button"
         >
-          {`Compare other ${otherOffersCount} offers`}
+          {`So sánh ${otherOffersCount} ưu đãi khác`}
         </Button>
       )}
       {isCompareOpen && (

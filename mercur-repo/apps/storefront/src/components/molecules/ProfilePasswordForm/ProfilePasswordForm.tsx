@@ -1,8 +1,7 @@
 "use client"
 
-import { Button } from '@/components/atoms/Button/Button';
-import { Card } from '@/components/atoms/Card/Card';
-import { LabeledInput } from '@/components/cells/LabeledInput/LabeledInput';
+import { Button, Card } from "@/components/atoms"
+import { LabeledInput } from "@/components/cells"
 import { zodResolver } from "@hookform/resolvers/zod"
 import {
   FieldError,
@@ -63,7 +62,7 @@ const Form = ({
   const updatePassword = async (data: FieldValues) => {
     if (form.getValues("confirmPassword") !== form.getValues("newPassword")) {
       setConfirmPasswordError({
-        message: "Passwords don't match. Please enter correct password.",
+        message: "Mật khẩu xác nhận không khớp. Vui lòng nhập lại chính xác.",
         type: "custom",
       } as FieldError)
       return
@@ -77,7 +76,7 @@ const Form = ({
         if (res.success) {
           setSuccess(true)
         } else {
-          toast.error(res.error || "Something went wrong")
+          toast.error(res.error || "Không thể cập nhật mật khẩu. Liên kết có thể đã hết hạn.")
         }
       } catch (err) {
         console.log(err)
@@ -87,42 +86,48 @@ const Form = ({
   }
 
   return success ? (
-    <div className="p-4">
+    <div className="p-4 text-center space-y-6">
+      <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 flex items-center justify-center font-bold text-2xl">
+        ✓
+      </div>
       <Heading
         level="h1"
-        className="uppercase heading-md text-primary text-center"
+        className="uppercase heading-md text-primary"
       >
-        Password changed
+        Đổi mật khẩu thành công
       </Heading>
-      <p className="text-center my-8">
-        Your are ready to log in with your new password
+      <p className="text-sm text-neutral-600 dark:text-neutral-400">
+        Mật khẩu mới của bạn đã được cập nhật thành công. Bạn có thể đăng nhập ngay bây giờ bằng mật khẩu mới.
       </p>
-      <LocalizedClientLink href="/login">
-        <Button
-          className="uppercase py-3 px-6 !font-semibold w-full"
-          size="large"
-        >
-          Log in
-        </Button>
-      </LocalizedClientLink>
+      <div className="pt-2">
+        <LocalizedClientLink href="/login" className="block">
+          <Button
+            className="uppercase py-3 px-6 !font-semibold w-full"
+            size="large"
+          >
+            Đăng nhập ngay
+          </Button>
+        </LocalizedClientLink>
+      </div>
     </div>
   ) : (
     <form
-      className="flex flex-col gap-4 px-4"
+      className="flex flex-col gap-4 px-2"
       onSubmit={handleSubmit(updatePassword)}
     >
       <Heading
         level="h1"
         className="uppercase heading-md text-primary"
       >
-        Set new password
+        Thiết lập mật khẩu mới
       </Heading>
-      <p className="text-secondary label-md">
-        Almost done. Enter your new password, and you&apos;re good to go.
+      <p className="text-secondary label-md text-neutral-600 dark:text-neutral-400">
+        Vui lòng nhập mật khẩu mới để hoàn tất quá trình khôi phục tài khoản.
       </p>
       <LabeledInput
-        label="Password"
+        label="Mật khẩu mới"
         type="password"
+        placeholder="Nhập mật khẩu mới"
         error={errors.newPassword as FieldError}
         {...register("newPassword")}
       />
@@ -131,12 +136,13 @@ const Form = ({
         setError={setNewPasswordError}
       />
       <LabeledInput
-        label="Confirm password"
+        label="Xác nhận mật khẩu mới"
         type="password"
+        placeholder="Nhập lại mật khẩu mới"
         error={(confirmPasswordError || errors.confirmPassword) as FieldError}
         {...register("confirmPassword")}
       />
-      <Button className="w-full my-4 uppercase">Set new password</Button>
+      <Button className="w-full my-4 uppercase">Cập nhật mật khẩu mới</Button>
     </form>
   )
 }

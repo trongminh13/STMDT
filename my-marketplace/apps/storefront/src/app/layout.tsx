@@ -3,8 +3,6 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 import { Toaster } from '@medusajs/ui';
-import Head from 'next/head';
-
 import { HtmlLangSetter } from '@/components/atoms/HtmlLangSetter/HtmlLangSetter';
 import { retrieveCart } from '@/lib/data/cart';
 
@@ -37,7 +35,7 @@ export default async function RootLayout({
       lang={htmlLang}
       className=""
     >
-      <Head>
+      <head>
         <link
           rel="preconnect"
           href="https://i.imgur.com"
@@ -84,7 +82,7 @@ export default async function RootLayout({
           rel="dns-prefetch"
           href="https://api.mercurjs.com"
         />
-      </Head>
+      </head>
       <body className="relative bg-primary text-secondary antialiased">
         <HtmlLangSetter />
         <Providers cart={cart}>{children}</Providers>

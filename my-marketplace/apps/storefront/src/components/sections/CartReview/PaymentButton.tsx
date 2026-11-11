@@ -9,6 +9,7 @@ import React, { useEffect, useState } from "react"
 import { Button } from "@/components/atoms"
 import { orderErrorFormatter } from "@/lib/helpers/order-error-formatter"
 import { toast } from "@/lib/helpers/toast"
+import { isDigitalCart } from "@/lib/helpers/digital-cart"
 
 type PaymentButtonProps = {
   cart: HttpTypes.StoreCart
@@ -19,14 +20,18 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
   cart,
   "data-testid": dataTestId,
 }) => {
+  const isDigital = isDigitalCart(cart)
   const notReady =
     !cart ||
     !cart.shipping_address ||
     !cart.billing_address ||
     !cart.email ||
-    (cart.shipping_methods?.length ?? 0) < 1
+    (!isDigital && (cart.shipping_methods?.length ?? 0) < 1)
 
   const paymentSession = cart.payment_collection?.payment_sessions?.[0]
+
+  const isPayOSOrManual = (id?: string) =>
+    isManual(id) || id?.startsWith("pp_system") || id?.startsWith("pp_payos")
 
   switch (true) {
     case isStripe(paymentSession?.provider_id):
@@ -37,7 +42,7 @@ const PaymentButton: React.FC<PaymentButtonProps> = ({
           data-testid={dataTestId}
         />
       )
-    case isManual(paymentSession?.provider_id):
+    case isPayOSOrManual(paymentSession?.provider_id):
       return (
         <ManualTestPaymentButton notReady={notReady} data-testid={dataTestId} />
       )

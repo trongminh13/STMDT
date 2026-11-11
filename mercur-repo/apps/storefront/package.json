@@ -3,7 +3,10 @@
   "version": "2.3.9-canary.7",
   "private": true,
   "scripts": {
+    "clean": "rm -rf .next",
+    "predev": "if [ -f .next/BUILD_ID ]; then rm -rf .next; else rm -rf .next/server/edge .next/static/development; fi",
     "dev": "next dev --turbopack",
+    "dev:clean": "rm -rf .next && next dev",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."

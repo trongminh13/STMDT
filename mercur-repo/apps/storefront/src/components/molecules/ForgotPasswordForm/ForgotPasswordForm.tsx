@@ -3,14 +3,13 @@
 import { useState } from 'react';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { ClientError } from '@mercurjs/client';
-import Link from 'next/link';
 import { FieldError, FormProvider, useForm, useFormContext } from 'react-hook-form';
 
-import { Button } from '@/components/atoms/Button/Button';
-import { LabeledInput } from '@/components/cells/LabeledInput/LabeledInput';
+import { Button } from '@/components/atoms';
+import { LabeledInput } from '@/components/cells';
 import { sendResetPasswordEmail } from '@/lib/data/customer';
 import { toast } from '@/lib/helpers/toast';
+import LocalizedClientLink from '../LocalizedLink/LocalizedLink';
 
 import { ForgotPasswordFormData, forgotPasswordSchema } from './schema';
 
@@ -43,25 +42,25 @@ const Form = () => {
     const result = await sendResetPasswordEmail(data.email);
 
     if (!result.success) {
-      toast.error({ title: result.error || 'An error occurred. Please try again.' });
+      toast.error({ title: result.error || 'Đã có lỗi xảy ra. Vui lòng thử lại sau.' });
       return;
     }
 
     reset({ email: '' });
 
     toast.success({
-      title: `Password reset was requested. If an account exists for ${data.email}, you’ll receive an email with a reset link. Check your inbox and spam folder - the link is valid for one hour.`
+      title: `Yêu cầu khôi phục mật khẩu đã được gửi! Nếu tài khoản ${data.email} tồn tại trong hệ thống, bạn sẽ nhận được thư hướng dẫn trong giây lát. Vui lòng kiểm tra hộp thư đến (và thư rác) - liên kết có hiệu lực trong 15 phút.`
     });
   };
 
   return (
     <div
-      className="mx-auto mt-6 w-full max-w-xl space-y-4 rounded-sm border p-4"
+      className="mx-auto mt-8 w-full max-w-xl space-y-4 rounded-sm border p-6 bg-white dark:bg-[#18181b]"
       data-testid="forgot-password-form-container"
     >
-      <h1 className="heading-md my-0 mb-2 uppercase text-primary">Forgot your password?</h1>
-      <p className="text-md">
-        Enter the email you used to sign up and we&#39;ll send you a password reset email. email.
+      <h1 className="heading-md my-0 mb-2 uppercase text-primary">Quên mật khẩu?</h1>
+      <p className="text-md text-neutral-600 dark:text-neutral-400">
+        Nhập địa chỉ email đăng ký tài khoản của bạn. Sàn Đại Việt AI sẽ gửi liên kết khôi phục mật khẩu qua email.
       </p>
       <form
         onSubmit={handleSubmit(submit)}
@@ -69,8 +68,8 @@ const Form = () => {
       >
         <div className="space-y-4">
           <LabeledInput
-            label="E-mail"
-            placeholder="Your e-mail address"
+            label="Địa chỉ E-mail"
+            placeholder="Nhập email của bạn (ví dụ: vidu@congty.com)"
             error={errors.email as FieldError}
             data-testid="forgot-password-email-input"
             {...register('email')}
@@ -83,11 +82,11 @@ const Form = () => {
             disabled={isSubmitting}
             data-testid="forgot-password-submit-button"
           >
-            Reset Password
+            {isSubmitting ? 'ĐANG GỬI LIÊN KẾT...' : 'GỬI LIÊN KẾT KHÔI PHỤC'}
           </Button>
 
-          <Link
-            href="/user"
+          <LocalizedClientLink
+            href="/login"
             className="flex"
             data-testid="forgot-password-back-to-login-link"
           >
@@ -95,9 +94,9 @@ const Form = () => {
               variant="tonal"
               className="flex w-full justify-center uppercase"
             >
-              Back to log in
+              Quay lại đăng nhập
             </Button>
-          </Link>
+          </LocalizedClientLink>
         </div>
       </form>
     </div>

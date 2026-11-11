@@ -9,11 +9,12 @@ import { clx, Heading, Text } from '@medusajs/ui';
 import clsx from 'clsx';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 
-import { Button } from '@/components/atoms/Button/Button';
+import { Button } from '@/components/atoms';
 import ErrorMessage from '@/components/molecules/ErrorMessage/ErrorMessage';
 import { removeShippingMethod, setShippingMethod } from '@/lib/data/cart';
 import { calculatePriceForShippingOption } from '@/lib/data/fulfillment';
 import { convertToLocale } from '@/lib/helpers/money';
+import { isDigitalCart } from '@/lib/helpers/digital-cart';
 
 import { CartShippingMethodRow } from './CartShippingMethodRow';
 
@@ -169,10 +170,14 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
     );
   };
 
+  const isDigital = isDigitalCart(cart);
+
   // Payment is only reachable once every seller in the cart has a method.
+  // For digital carts on Sàn Đại Việt AI, shipping methods are 0đ and automatically satisfied.
   const allSellersHaveMethod =
-    filteredGroupedBySellerId.length > 0 &&
-    filteredGroupedBySellerId.every(key => !!getSelectedMethodForSeller(key));
+    isDigital ||
+    (filteredGroupedBySellerId.length > 0 &&
+      filteredGroupedBySellerId.every(key => !!getSelectedMethodForSeller(key)));
 
   // Map each selected method back to its seller name for the summary rows.
   const sellerNameByOptionId = new Map<string, string | undefined>(
@@ -186,8 +191,8 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
           level="h2"
           className="text-3xl-regular flex flex-row items-baseline gap-x-2"
         >
-          {!isOpen && (cart.shipping_methods?.length ?? 0) > 0 && <CheckCircleSolid />}
-          Delivery
+          {!isOpen && (isDigital || (cart.shipping_methods?.length ?? 0) > 0) && <CheckCircleSolid />}
+          {isDigital ? 'Phương Thức Bàn Giao' : 'Delivery'}
         </Heading>
         {isEditEnabled && (
           <Text>
@@ -205,12 +210,38 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
           <div className="grid">
             <div data-testid="delivery-options-container">
               <div className="pb-8 pt-2 md:pt-0">
-                {filteredGroupedBySellerId.length === 0
-                  ? 'No shipping options available'
-                  : filteredGroupedBySellerId.map(key => {
-                      const selectedMethod = getSelectedMethodForSeller(key);
+                {isDigital ? (
+                  <div className="mb-4 rounded-lg border border-[#1E5FBF]/30 bg-[#1E5FBF]/5 p-5">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                          <span className="font-bold text-base text-[#18181B]">Bàn Giao Kỹ Thuật Số Tức Thì</span>
+                          <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-semibold text-emerald-800">
+                            0 đ (Miễn phí 100%)
+                          </span>
+                        </div>
+                        <p className="mt-2 text-sm text-[#18181B]/80 leading-relaxed">
+                          Tất cả mặt hàng trong giỏ là tài sản số AI (Workflows n8n, SaaS Next.js 15, Prompts, AI Agents).
+                          Sau khi hoàn tất thanh toán VietQR / PayOS, đường link tải an toàn từ Cloudflare R2 (presigned URL) và hướng dẫn triển khai sẽ được cấp phát tức thì tới Email và Zalo của bạn.
+                        </p>
+                        <div className="mt-4 flex flex-wrap items-center gap-4 text-xs font-mono text-[#18181B]/70 border-t border-[#1E5FBF]/20 pt-3">
+                          <span className="flex items-center gap-1 font-semibold text-[#1E5FBF]">
+                            ⚡ Bàn giao: Tức thì (&lt; 30 giây)
+                          </span>
+                          <span>🔒 Bảo mật: R2 Presigned Token</span>
+                          <span>🛠️ Hỗ trợ: Zalo OA & bảo hành 72h</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ) : filteredGroupedBySellerId.length === 0 ? (
+                  'No shipping options available'
+                ) : (
+                  filteredGroupedBySellerId.map(key => {
+                    const selectedMethod = getSelectedMethodForSeller(key);
 
-                      return (
+                    return (
                       <div
                         key={key}
                         className="mb-4"
@@ -286,8 +317,9 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                           </div>
                         </Listbox>
                       </div>
-                      );
-                    })}
+                    );
+                  })
+                )}
                 {!!cart?.shipping_methods?.length && (
                   <div className="flex flex-col">
                     {cart.shipping_methods?.map(method => (
@@ -326,7 +358,16 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
       ) : (
         <div>
           <div className="text-small-regular">
-            {cart && (cart.shipping_methods?.length ?? 0) > 0 && (
+            {isDigital ? (
+              <div className="rounded-md border p-4 bg-muted/20">
+                <Text className="txt-medium-plus text-ui-fg-base mb-1 font-semibold">
+                  Phương thức nhận hàng:
+                </Text>
+                <Text className="txt-medium text-ui-fg-subtle">
+                  Bàn giao kỹ thuật số tức thì qua Cloudflare R2 & Zalo OA (0 đ)
+                </Text>
+              </div>
+            ) : cart && (cart.shipping_methods?.length ?? 0) > 0 ? (
               <div className="flex flex-col">
                 {cart.shipping_methods?.map(method => (
                   <div
@@ -344,7 +385,7 @@ const CartShippingMethodsSection: FC<ShippingProps> = ({ cart, availableShipping
                   </div>
                 ))}
               </div>
-            )}
+            ) : null}
           </div>
         </div>
       )}

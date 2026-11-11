@@ -104,7 +104,7 @@ const ListingResults = async ({
 
   return (
     <>
-      <div className="my-4 label-md" data-testid="product-listing-count">{`${count} listings`}</div>
+      <div className="my-4 label-md" data-testid="product-listing-count">{`${count} sản phẩm`}</div>
       {products.length ? (
         <ProductListingProductsView products={products} />
       ) : (

@@ -4,8 +4,22 @@ import Image from "next/image"
 export function CategoryCard({
   category,
 }: {
-  category: { name: string; handle: string }
+  category: { name: string; handle: string; image?: string }
 }) {
+  const imageSrc =
+    category.image ||
+    (category.handle === "tu-dong-hoa-workflow"
+      ? "/images/categories/automation-workflow.svg"
+      : category.handle === "ma-nguon-boilerplates"
+      ? "/images/categories/source-code.svg"
+      : category.handle === "phan-mem-tien-ich-so"
+      ? "/images/categories/extensions-tools.svg"
+      : category.handle === "goi-tri-thuc-prompt-ai"
+      ? "/images/categories/ai-knowledge.svg"
+      : category.handle === "dich-vu-cai-dat-chuyen-mon"
+      ? "/images/categories/setup-service.svg"
+      : `/images/categories/${category.handle}.png`)
+
   return (
     <LocalizedClientLink
       href={`/categories/${category.handle}`}
@@ -14,7 +28,7 @@ export function CategoryCard({
       <div className="flex relative aspect-square overflow-hidden w-[200px]">
         <Image
           loading="lazy"
-          src={`/images/categories/${category.handle}.png`}
+          src={imageSrc}
           alt={`category - ${category.name}`}
           width={200}
           height={200}

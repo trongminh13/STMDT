@@ -1,31 +1,61 @@
-import { useState, useCallback, useEffect } from 'react'
+'use client'
+
+import { useState, useCallback, useEffect, useRef } from 'react'
 
 export const useCategoryDropdown = () => {
   const [hoveredCategoryId, setHoveredCategoryId] = useState<string | null>(null)
   const [isDropdownVisible, setIsDropdownVisible] = useState(false)
   const [shouldRenderDropdown, setShouldRenderDropdown] = useState(false)
 
-  const openDropdown = useCallback((categoryId: string) => {
-    setHoveredCategoryId(categoryId)
-    setShouldRenderDropdown(true)
-    const timer = setTimeout(() => setIsDropdownVisible(true), 20)
-    return () => clearTimeout(timer)
+  const closeTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const cleanupTimerRef = useRef<NodeJS.Timeout | null>(null)
+
+  const cancelClose = useCallback(() => {
+    if (closeTimerRef.current) {
+      clearTimeout(closeTimerRef.current)
+      closeTimerRef.current = null
+    }
+    if (cleanupTimerRef.current) {
+      clearTimeout(cleanupTimerRef.current)
+      cleanupTimerRef.current = null
+    }
   }, [])
+
+  const openDropdown = useCallback(
+    (categoryId: string) => {
+      cancelClose()
+      setHoveredCategoryId(categoryId)
+      setShouldRenderDropdown(true)
+      const timer = setTimeout(() => {
+        setIsDropdownVisible(true)
+      }, 20)
+      return () => clearTimeout(timer)
+    },
+    [cancelClose]
+  )
 
   const closeDropdown = useCallback(() => {
+    cancelClose()
     setIsDropdownVisible(false)
-    const timer = setTimeout(() => {
+    cleanupTimerRef.current = setTimeout(() => {
       setShouldRenderDropdown(false)
       setHoveredCategoryId(null)
-    }, 0)
-    return () => clearTimeout(timer)
-  }, [])
+    }, 200)
+  }, [cancelClose])
 
-  useEffect(() => {
-    if (!hoveredCategoryId) {
-      closeDropdown()
-    }
-  }, [hoveredCategoryId, closeDropdown])
+  const scheduleClose = useCallback(
+    (delay = 180) => {
+      cancelClose()
+      closeTimerRef.current = setTimeout(() => {
+        setIsDropdownVisible(false)
+        cleanupTimerRef.current = setTimeout(() => {
+          setShouldRenderDropdown(false)
+          setHoveredCategoryId(null)
+        }, 200)
+      }, delay)
+    },
+    [cancelClose]
+  )
 
   useEffect(() => {
     if (!shouldRenderDropdown) return
@@ -35,11 +65,16 @@ export const useCategoryDropdown = () => {
     }
 
     window.addEventListener('scroll', handlePageScroll, { passive: true })
-
     return () => {
       window.removeEventListener('scroll', handlePageScroll)
     }
   }, [shouldRenderDropdown, closeDropdown])
+
+  useEffect(() => {
+    return () => {
+      cancelClose()
+    }
+  }, [cancelClose])
 
   return {
     hoveredCategoryId,
@@ -47,6 +82,8 @@ export const useCategoryDropdown = () => {
     shouldRenderDropdown,
     openDropdown,
     closeDropdown,
+    scheduleClose,
+    cancelClose,
     setHoveredCategoryId,
   }
 }

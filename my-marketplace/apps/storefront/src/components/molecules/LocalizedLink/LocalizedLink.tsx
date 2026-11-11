@@ -23,10 +23,30 @@ const LocalizedClientLink = ({
   const params = useParams()
   const pathname = usePathname()
   
-  const locale = params?.locale || pathname?.split('/')[1] || 'en'
+  const defaultRegion = process.env.NEXT_PUBLIC_DEFAULT_REGION || "vn"
+  const currentLocale =
+    (params?.locale as string) ||
+    (pathname ? pathname.split("/")[1] : "") ||
+    defaultRegion
+
+  let targetPath = href || "/"
+
+  // If targetPath already has the current locale prefix, do not duplicate
+  if (targetPath.startsWith(`/${currentLocale}/`) || targetPath === `/${currentLocale}`) {
+    return (
+      <Link href={targetPath} {...props}>
+        {children}
+      </Link>
+    )
+  }
+
+  // Ensure targetPath starts with '/'
+  if (!targetPath.startsWith("/")) {
+    targetPath = `/${targetPath}`
+  }
 
   return (
-    <Link href={`/${locale}${href}`} {...props}>
+    <Link href={`/${currentLocale}${targetPath}`} {...props}>
       {children}
     </Link>
   )

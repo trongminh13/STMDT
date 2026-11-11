@@ -197,7 +197,12 @@ export const GET = async (req: AuthenticatedMedusaRequest, res: MedusaResponse) 
         const file = await fileService.retrieveFile(asset.file_id)
         downloadUrl = file?.url || ""
       } catch {
-        downloadUrl = `http://localhost:9000/static/downloads/${asset.file_id}`
+        const fileBase =
+          process.env.FILE_BACKEND_URL ||
+          (process.env.BACKEND_URL ? `${process.env.BACKEND_URL}/static` : "") ||
+          (process.env.MEDUSA_BACKEND_URL ? `${process.env.MEDUSA_BACKEND_URL}/static` : "") ||
+          "http://localhost:9000/static"
+        downloadUrl = `${fileBase}/downloads/${asset.file_id}`
       }
 
       return {

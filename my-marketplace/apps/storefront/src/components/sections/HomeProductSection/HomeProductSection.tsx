@@ -1,5 +1,6 @@
 import { HomeProductsCarousel } from "@/components/organisms"
 import { Product } from "@/types/product"
+import { HttpTypes } from "@medusajs/types"
 
 export const HomeProductSection = async ({
   heading,
@@ -9,26 +10,19 @@ export const HomeProductSection = async ({
 }: {
   heading: string
   locale?: string
-  products?: Product[]
+  products?: (Product | HttpTypes.StoreProduct)[]
   home?: boolean
 }) => {
   return (
     <section className="py-8 w-full">
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="mb-6 flex flex-col">
-          <h2 className="heading-lg font-bold tracking-tight uppercase">
-            {heading}
-          </h2>
-          <p className="text-secondary text-sm md:text-base mt-1">
-            Các gói giải pháp mã nguồn, workflow tự động hóa và tiện ích AI được người dùng tin cậy nhất.
-          </p>
-        </div>
-        <HomeProductsCarousel
-          locale={locale}
-          sellerProducts={products.slice(0, 8)}
-          home={home}
-        />
-      </div>
+      <h2 className="mb-6 heading-lg font-bold tracking-tight uppercase">
+        {heading}
+      </h2>
+      <HomeProductsCarousel
+        locale={locale}
+        sellerProducts={products.slice(0, 8)}
+        home={home}
+      />
     </section>
   )
 }

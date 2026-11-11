@@ -29,13 +29,17 @@ export const POST = async (req: AuthenticatedMedusaRequest, res: MedusaResponse)
     )
   }
 
-  // IDOR check: Khách hàng chỉ được thanh toán cho chính đơn hàng của mình
-  if (customerId && order.customer_id && order.customer_id !== customerId) {
-    throw new MedusaError(
-      MedusaError.Types.NOT_ALLOWED,
-      "Bạn không có quyền truy cập thông tin thanh toán cho đơn hàng này."
-    )
+  // Strict IDOR check:
+  // 1. Nếu đơn hàng thuộc về tài khoản khách hàng đã đăng ký, bắt buộc request phải được xác thực và đúng chủ sở hữu
+  if (order.customer_id) {
+    if (!customerId || order.customer_id !== customerId) {
+      throw new MedusaError(
+        MedusaError.Types.NOT_ALLOWED,
+        "Bạn không có quyền truy cập thông tin thanh toán cho đơn hàng này."
+      )
+    }
   }
+  // 2. Nếu đơn hàng là Guest Checkout (order.customer_id == null), cho phép thanh toán ẩn danh theo đúng mã đơn hàng
 
   if (order.payment_status === "captured") {
     return res.json({

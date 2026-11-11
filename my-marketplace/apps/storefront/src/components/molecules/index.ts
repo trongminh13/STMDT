@@ -36,6 +36,8 @@ import { SellerScore } from './SellerScore/SellerScore';
 import { TabsContent } from './TabsContent/TabsContent';
 import { TabsList } from './TabsList/TabsList';
 import { UserNavigation } from './UserNavigation/UserNavigation';
+import { ReviewModal } from './ReviewModal/ReviewModal';
+import { ReviewButton } from './ReviewButton/ReviewButton';
 
 export {
   PrimeCategoryNavbar,
@@ -75,5 +77,7 @@ export {
   ProfileDetails,
   ProductListingLoadingView,
   ProductListingNoResultsView,
-  ProductListingProductsView
+  ProductListingProductsView,
+  ReviewModal,
+  ReviewButton
 };

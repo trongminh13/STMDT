@@ -1,4 +1,5 @@
 "use client"
+
 import { HttpTypes } from "@medusajs/types"
 import LocalizedClientLink from "@/components/molecules/LocalizedLink/LocalizedLink"
 import { cn } from "@/lib/utils"
@@ -30,7 +31,8 @@ const CategoryNavbarView = ({
     isDropdownVisible,
     shouldRenderDropdown,
     openDropdown,
-    setHoveredCategoryId,
+    scheduleClose,
+    cancelClose,
     closeDropdown,
   } = useCategoryDropdown()
 
@@ -44,25 +46,15 @@ const CategoryNavbarView = ({
     [category, categories]
   )
 
-  // At the top level (home / all-products) the departments are already shown by
-  // `ParentCategoryLinks`, so keep this row to just "All Products" and avoid the
-  // duplicate. Subcategories only appear once a department is active.
-  const filteredCategories = useMemo(
-    () =>
-      activeParentHandle
-        ? filterCategoriesByParent(
-            activeParentHandle,
-            categories,
-            parentCategories
-          )
-        : [],
-    [activeParentHandle, parentCategories, categories]
-  )
-
-  const hoveredCategory = useMemo(
-    () => filteredCategories.find((cat) => cat.id === hoveredCategoryId),
-    [filteredCategories, hoveredCategoryId]
-  )
+  // Primary categories to show in the navigation bar:
+  // Always keep the primary 5 AI categories (parentCategories) on the navbar
+  // so navigation remains stable across all pages and doesn't get replaced when clicked.
+  const displayCategories = useMemo(() => {
+    if (parentCategories && parentCategories.length > 0) {
+      return parentCategories
+    }
+    return categories.filter((c) => !c.parent_category_id)
+  }, [parentCategories, categories])
 
   const handleClose = () => {
     onClose?.(false)
@@ -70,85 +62,104 @@ const CategoryNavbarView = ({
   }
 
   const handleCategoryMouseEnter = (categoryId: string) => {
-    const cat = filteredCategories.find((c) => c.id === categoryId)
+    const cat = displayCategories.find((c) => c.id === categoryId)
     if (cat?.category_children && cat.category_children.length > 0) {
       openDropdown(categoryId)
+    } else {
+      scheduleClose(100)
     }
   }
 
   const handleCategoryMouseLeave = () => {
-    setHoveredCategoryId(null)
+    scheduleClose(180)
   }
 
   const handleDropdownMouseEnter = () => {
-    if (hoveredCategoryId) {
-      setHoveredCategoryId(hoveredCategoryId)
-    }
+    cancelClose()
   }
 
   const handleDropdownMouseLeave = () => {
-    setHoveredCategoryId(null)
+    scheduleClose(180)
   }
+
   return (
-    <>
-      <nav
-        className="flex md:items-center flex-col md:flex-row md:overflow-x-auto md:scrollbar-hide md:max-w-full gap-2"
-        aria-label="Category navigation"
-        data-testid="category-navbar"
+    <nav
+      className="flex md:items-center flex-col md:flex-row md:overflow-visible gap-1 lg:gap-2 relative"
+      aria-label="Category navigation"
+      data-testid="category-navbar"
+    >
+      <LocalizedClientLink
+        href="/categories"
+        onClick={handleClose}
+        className={cn(
+          "text-xs md:text-sm font-semibold uppercase px-3 py-1.5 rounded-none flex items-center justify-between md:flex-shrink-0 text-neutral-800 dark:text-neutral-200 hover:text-action hover:bg-neutral-100 dark:hover:bg-neutral-800/80 transition-all duration-150"
+        )}
+        data-testid="category-link-all-products"
       >
-        <LocalizedClientLink
-          href="/categories"
-          onClick={handleClose}
-          className={cn(
-            "label-md uppercase px-2 my-1 md:my-0 flex items-center justify-between md:flex-shrink-0 text-primary"
-          )}
-          data-testid="category-link-all-products"
-        >
-          All Products
-        </LocalizedClientLink>
+        Tất cả sản phẩm
+      </LocalizedClientLink>
 
-        {filteredCategories.map(({ id, handle, name, category_children }) => {
-          const categoryUrl = `/categories/${handle}`
-          const isActive =
-            handle === category || handle === parentCategoryHandle
-          const hasChildren = category_children && category_children.length > 0
+      {displayCategories.map((item, index) => {
+        const { id, handle, name, category_children } = item
+        const categoryUrl = `/categories/${handle}`
+        const isActive =
+          handle === category ||
+          handle === activeParentHandle ||
+          handle === parentCategoryHandle
+        const hasChildren = Boolean(
+          category_children && category_children.length > 0
+        )
+        const isCurrentHovered = hoveredCategoryId === id && isDropdownVisible
+        const isLastItem = index === displayCategories.length - 1
 
-          return (
-            <div
-              key={id}
-              className="md:flex-shrink-0"
-              onMouseEnter={() => handleCategoryMouseEnter(id)}
-              onMouseLeave={handleCategoryMouseLeave}
+        return (
+          <div
+            key={id}
+            className="md:flex-shrink-0 relative"
+            onMouseEnter={() => handleCategoryMouseEnter(id)}
+            onMouseLeave={handleCategoryMouseLeave}
+          >
+            <LocalizedClientLink
+              href={categoryUrl}
+              onClick={handleClose}
+              className={cn(
+                "text-xs md:text-sm font-medium uppercase px-3 py-1.5 rounded-none my-1 md:my-0 flex items-center gap-1.5 md:whitespace-nowrap transition-all duration-150",
+                isActive
+                  ? "text-action font-semibold bg-neutral-100/90 dark:bg-neutral-800"
+                  : isCurrentHovered
+                  ? "text-action bg-neutral-100 dark:bg-neutral-800"
+                  : "text-neutral-700 dark:text-neutral-300 hover:text-action hover:bg-neutral-100/80 dark:hover:bg-neutral-800/60"
+              )}
+              data-testid={`category-link-${handle}`}
             >
-              <LocalizedClientLink
-                href={categoryUrl}
-                onClick={handleClose}
-                className={cn(
-                  "label-md uppercase px-2 py-1 my-3 md:my-0 flex items-center justify-between md:whitespace-nowrap text-primary relative z-10",
-                  isActive && "md:border-b md:border-primary"
-                )}
-                data-testid={`category-link-${handle}`}
-              >
-                {name}
-                {hasChildren && (
-                  <CollapseIcon size={18} className="-rotate-90 md:hidden" />
-                )}
-              </LocalizedClientLink>
-            </div>
-          )
-        })}
-      </nav>
+              <span>{name}</span>
+              {hasChildren && (
+                <span
+                  className={cn(
+                    "inline-flex items-center transition-transform duration-200",
+                    isCurrentHovered ? "rotate-180 text-action" : "text-neutral-400"
+                  )}
+                >
+                  <CollapseIcon size={14} className="-rotate-90" />
+                </span>
+              )}
+            </LocalizedClientLink>
 
-      {shouldRenderDropdown && hoveredCategory && (
-        <CategoryDropdownMenu
-          category={hoveredCategory}
-          isVisible={isDropdownVisible}
-          onMouseEnter={handleDropdownMouseEnter}
-          onMouseLeave={handleDropdownMouseLeave}
-          onLinkClick={handleClose}
-        />
-      )}
-    </>
+            {/* Classic Vertical Dropdown Menu attached directly beneath this category button */}
+            {shouldRenderDropdown && isCurrentHovered && hasChildren && (
+              <CategoryDropdownMenu
+                category={item}
+                align={isLastItem ? "right" : "left"}
+                isVisible={isDropdownVisible}
+                onMouseEnter={handleDropdownMouseEnter}
+                onMouseLeave={handleDropdownMouseLeave}
+                onLinkClick={handleClose}
+              />
+            )}
+          </div>
+        )
+      })}
+    </nav>
   )
 }
 

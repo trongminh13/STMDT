@@ -624,7 +624,9 @@ export type Routes = {
             $id: typeof import("@medusajs/medusa/api/store/product-variants/[id]/route");
         };
         products: typeof import("@mercurjs/core/api/store/products/route") & {
-            $id: typeof import("@mercurjs/core/api/store/products/[id]/route");
+            $id: typeof import("@mercurjs/core/api/store/products/[id]/route") & {
+                reviews: typeof import("../src/api/store/products/[id]/reviews/route");
+            };
         };
         regions: typeof import("@medusajs/medusa/api/store/regions/route") & {
             $id: typeof import("@medusajs/medusa/api/store/regions/[id]/route");
@@ -634,7 +636,9 @@ export type Routes = {
         };
         returns: typeof import("@medusajs/medusa/api/store/returns/route");
         sellers: typeof import("@mercurjs/core/api/store/sellers/route") & {
-            $id: typeof import("@mercurjs/core/api/store/sellers/[id]/route");
+            $id: typeof import("@mercurjs/core/api/store/sellers/[id]/route") & {
+                reviews: typeof import("../src/api/store/sellers/[id]/reviews/route");
+            };
         };
         shippingOptions: typeof import("@mercurjs/core/api/store/shipping-options/route") & {
             $id: {

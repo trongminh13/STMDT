@@ -86,7 +86,7 @@ export const CartDropdown = () => {
       </LocalizedClientLink>
       <Dropdown show={open}>
         <div className="lg:w-[460px] shadow-lg">
-          <h3 className="uppercase heading-md border-b p-4">Shopping cart</h3>
+          <h3 className="uppercase heading-md border-b p-4">Giỏ hàng của bạn</h3>
           <div className="p-4">
             {Boolean(cartItemsCount) ? (
               <div>
@@ -101,32 +101,32 @@ export const CartDropdown = () => {
                 </div>
                 <div className="pt-4">
                   <div className="text-secondary flex justify-between items-center">
-                    Items <p className="label-md text-primary">{items}</p>
+                    Sản phẩm <p className="label-md text-primary">{items}</p>
                   </div>
                   <div className="text-secondary flex justify-between items-center">
-                    Delivery <p className="label-md text-primary">{delivery}</p>
+                    Giao nhận <p className="label-md text-primary">{delivery}</p>
                   </div>
                   <div className="text-secondary flex justify-between items-center">
-                    Tax <p className="label-md text-primary">{tax}</p>
+                    Thuế VAT <p className="label-md text-primary">{tax}</p>
                   </div>
                   <div className="text-secondary flex justify-between items-center">
-                    Total <p className="label-xl text-primary">{total}</p>
+                    Tổng cộng <p className="label-xl text-primary">{total}</p>
                   </div>
                   <LocalizedClientLink href="/cart">
-                    <Button className="w-full mt-4 py-3">Go to cart</Button>
+                    <Button className="w-full mt-4 py-3">Xem giỏ hàng</Button>
                   </LocalizedClientLink>
                 </div>
               </div>
             ) : (
               <div className="px-8">
                 <h4 className="heading-md uppercase text-center">
-                  Your shopping cart is empty
+                  Giỏ hàng của bạn đang trống
                 </h4>
                 <p className="text-lg text-center py-4">
-                  Are you looging for inspiration?
+                  Khám phá các giải pháp AI và tự động hóa mới nhất
                 </p>
                 <LocalizedClientLink href="/categories">
-                  <Button className="w-full py-3">Explore Home Page</Button>
+                  <Button className="w-full py-3">Khám phá giải pháp</Button>
                 </LocalizedClientLink>
               </div>
             )}

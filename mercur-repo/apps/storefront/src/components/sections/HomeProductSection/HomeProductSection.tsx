@@ -1,15 +1,16 @@
-import { HomeProductsCarousel } from '@/components/organisms/HomeProductsCarousel/HomeProductsCarousel';
+import { HomeProductsCarousel } from "@/components/organisms"
 import { Product } from "@/types/product"
+import { HttpTypes } from "@medusajs/types"
 
 export const HomeProductSection = async ({
   heading,
-  locale = process.env.NEXT_PUBLIC_DEFAULT_REGION || "pl",
+  locale = process.env.NEXT_PUBLIC_DEFAULT_REGION || "vn",
   products = [],
   home = false,
 }: {
   heading: string
   locale?: string
-  products?: Product[]
+  products?: (Product | HttpTypes.StoreProduct)[]
   home?: boolean
 }) => {
   return (
@@ -19,7 +20,7 @@ export const HomeProductSection = async ({
       </h2>
       <HomeProductsCarousel
         locale={locale}
-        sellerProducts={products.slice(0, 4)}
+        sellerProducts={products.slice(0, 8)}
         home={home}
       />
     </section>
